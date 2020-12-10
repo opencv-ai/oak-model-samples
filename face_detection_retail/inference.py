@@ -82,7 +82,6 @@ def inference():
             indent=4,
             sort_keys=True,
         )
-    return inference_results
 
 
 if __name__ == "__main__":
