@@ -1,0 +1,58 @@
+default_language_version:
+  python: python3.7
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v2.5.0
+    hooks:
+      - id: check-yaml
+      - id: trailing-whitespace
+        files: '\.(py|md|txt)$'
+      - id: end-of-file-fixer
+        files: '\.(py|md|txt)$'
+      - id: check-ast
+      - id: mixed-line-ending
+      - id: requirements-txt-fixer
+
+  - repo: https://github.com/Lucas-C/pre-commit-hooks
+    rev: v1.1.7
+    hooks:
+      - id: remove-tabs
+        files: \.(py,md)$
+  - repo: https://github.com/asottile/add-trailing-comma
+    rev: v2.0.1
+    hooks:
+      - id: add-trailing-comma
+        files: \.py$
+  - repo: https://github.com/asottile/seed-isort-config
+    rev: v2.1.1
+    hooks:
+      - id: seed-isort-config
+        files: \.py$
+  - repo: local
+    hooks:
+      - id: isort
+        name: isort
+        entry: python3 -m isort -y --settings-path pyproject.toml
+        types: [python]
+        language: system
+  - repo: local
+    hooks:
+      - id: prettier
+        name: prettier
+        language: docker_image
+        entry: tmknom/prettier:2.0.5 --parser=markdown --write --config ./.prettierrc
+        files: (?!(styles|ci)/)\.md$
+  - repo: local
+    hooks:
+      - id: prettier
+        name: prettier
+        language: docker_image
+        entry: tmknom/prettier:2.0.5 --parser=yaml --write --config ./.prettierrc
+        files: \.ya?ml$
+  - repo: local
+    hooks:
+      - id: black
+        name: black
+        types: [python]
+        language: system
+        entry: black --config pyproject.toml
