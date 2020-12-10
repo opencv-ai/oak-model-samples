@@ -7,11 +7,8 @@ __pycache__/
 dist
 build
 *.egg-info
-wheel_packages
 *.orig
 .vscode
 .nox
 .mypy_cache
 *.code-workspace
-.doit*
-.trivycache/
