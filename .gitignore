@@ -6,6 +6,7 @@ __pycache__/
 *.o
 dist
 build
+venv/
 *.egg-info
 *.orig
 .vscode
