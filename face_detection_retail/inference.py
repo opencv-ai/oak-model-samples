@@ -3,6 +3,7 @@ import os
 from argparse import ArgumentParser
 
 import cv2
+import imageio
 import pydantic
 from model_benchmark_api import Device
 from visualization import draw_detection_result
@@ -46,12 +47,14 @@ def inference():
         cap = cv2.VideoCapture(args.video)
         while cap.isOpened():
             read_correctly, image = cap.read()
-            assert read_correctly
+            if not read_correctly:
+                cv2.destroyAllWindows()
+                break
             ret = model.process_sample(image)
             inference_results.append(ret)
-            if args.vizualization:
-                viz_result = draw_detection_result(image, ret)
-                cv2.imshow("Vizualization", viz_result)
+            if args.visualization:
+                vis_result = draw_detection_result(image, ret)
+                cv2.imshow("Visualization", vis_result)
                 if cv2.waitKey(1) == ord("q"):
                     cv2.destroyAllWindows()
                     break
@@ -61,14 +64,14 @@ def inference():
             image = cam_out.get().getData().reshape((3, 300, 300)).transpose(1, 2, 0)
             ret = model.process_sample(image)
             inference_results.append(ret)
-            if args.vizualization:
-                viz_result = draw_detection_result(image, ret)
-                cv2.imshow("Vizualization", viz_result)
+            if args.visualization:
+                vis_result = draw_detection_result(image, ret)
+                cv2.imshow("Visualization", vis_result)
                 if cv2.waitKey(1) == ord("q"):
                     cv2.destroyAllWindows()
                     break
             else:
-                raise RuntimeError("Camera inference should be used with -viz option")
+                raise RuntimeError("Camera inference should be used with -vis option")
     with open("inference_results.json", "w") as fp:
         json.dump(
             [
