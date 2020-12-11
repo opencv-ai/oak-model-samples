@@ -23,6 +23,10 @@ class InferenceModel(BaseInferenceModel):
         self.threshold = threshold
         self.classes = ["female", "male"]
         self.face_processor = FaceProcessor(threshold)
+        self.input_width, self.input_height = (
+            62,
+            62,
+        )
 
     def preprocess(self, data):
         face_bboxes = self.get_faces(data)
@@ -140,11 +144,6 @@ class InferenceModel(BaseInferenceModel):
         self.face_detector_out = self.oak_device.getOutputQueue("face_detector_out")
         self.age_gender_in = self.oak_device.getInputQueue("age_gender_in")
         self.age_gender_out = self.oak_device.getOutputQueue("age_gender_out")
-
-        self.input_width, self.input_height = (
-            62,
-            62,
-        )
 
     def forward(self, data, stage="age-gender"):
         results = []
