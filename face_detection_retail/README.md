@@ -16,15 +16,21 @@ The original model could be found in Intel Open Model Zoo, and the model card is
 ## Usage
 
 ```
-usage: inference.py [-h] [-cam] [-vid VIDEO] [-vis]
+usage: inference.py [-h] [-cam] [-vid VIDEO] [-vis] [-cs WIDTHxHEIGHT]
 
 optional arguments:
   -h, --help            show this help message and exit
-  -cam, --camera        Use DepthAI RGB camera for inference (conflicts with -vid)
+  -cam, --camera        Use DepthAI RGB camera for inference (conflicts with
+                        -vid)
   -vid VIDEO, --video VIDEO
                         Path to file to run inference on (conflicts with -cam)
   -vis, --visualization
-                        Visualize the results from the network (required for -cam)
+                        Visualize the results from the network (required for
+                        -cam)
+  -cs WIDTHxHEIGHT, --capture-size WIDTHxHEIGHT
+                        Frame shapes to capture with DepthAI RGB camera in WxH
+                        format. The preview window will have the same shapes
+                        (excluding legend).
 
 ```
 
@@ -43,3 +49,11 @@ To use with DepthAI 4K RGB camera, use instead
 ```
 python3 main.py -cam -vis
 ```
+
+Also, you can specify the preview size with `-cs` key from the following:
+
+```
+["300x300", "640x480", "1280x720", "1920x1080"]
+```
+
+Lower resolution leads to higher inference speed.
