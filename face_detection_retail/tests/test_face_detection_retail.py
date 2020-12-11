@@ -36,7 +36,7 @@ with open(test_result_path, "r") as j_file:
     test_result = json.loads(j_file.read())
 
 
-def test_process_sample_oak_face_detection_retail():
+def test_process_sample_face_detection_retail():
     model = InferenceModel(model_path=model_path)
     model.model_load()
     model.to_device(Device.cpu)
