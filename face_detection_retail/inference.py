@@ -3,7 +3,6 @@ import os
 from argparse import ArgumentParser
 
 import cv2
-import imageio
 import pydantic
 from model_benchmark_api import Device
 from visualization import draw_detection_result
@@ -32,6 +31,16 @@ def parse_args():
         action="store_true",
         help="Visualize the results from the network (required for -cam)",
     )
+    parser.add_argument(
+        "-cs",
+        "--capture-size",
+        help="Frame shapes to capture with DepthAI RGB camera in WxH format."
+        " The preview window will have the same shapes (excluding legend).",
+        choices=["300x300", "640x480", "1280x720", "1920x1080"],
+        default="300x300",
+        type=str,
+        metavar=("WIDTHxHEIGHT"),
+    )
     return parser.parse_args()
 
 
@@ -59,9 +68,15 @@ def inference():
                     cv2.destroyAllWindows()
                     break
     else:
-        cam_out = model.add_cam_to_pipeline()
+        preview_width, preview_height = map(int, args.capture_size.split("x"))
+        cam_out = model.add_cam_to_pipeline(preview_width, preview_height)
         while True:
-            image = cam_out.get().getData().reshape((3, 300, 300)).transpose(1, 2, 0)
+            image = (
+                cam_out.get()
+                .getData()
+                .reshape((3, preview_height, preview_width))
+                .transpose(1, 2, 0)
+            )
             ret = model.process_sample(image)
             inference_results.append(ret)
             if args.visualization:

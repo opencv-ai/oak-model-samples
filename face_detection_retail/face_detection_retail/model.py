@@ -158,9 +158,9 @@ class InferenceModel(BaseModel):
         results = self.postprocess(output)
         return results[0]
 
-    def add_cam_to_pipeline(self):
+    def add_cam_to_pipeline(self, preview_width, preview_height):
         cam = self.pipeline.createColorCamera()
-        cam.setPreviewSize(self.input_height, self.input_width)
+        cam.setPreviewSize(preview_width, preview_height)
         cam.setResolution(dai.ColorCameraProperties.SensorResolution.THE_1080_P)
         cam.setInterleaved(False)
         cam.setCamId(0)
