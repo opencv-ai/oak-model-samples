@@ -87,7 +87,9 @@ def inference():
                     break
             else:
                 raise RuntimeError("Camera inference should be used with -vis option")
-    with open("inference_results.json", "w") as fp:
+    with open(
+        os.path.join(os.path.dirname(__file__), "inference_results.json"), "w",
+    ) as fp:
         json.dump(
             [
                 [pydantic.json.pydantic_encoder(item) for item in frame_result]
