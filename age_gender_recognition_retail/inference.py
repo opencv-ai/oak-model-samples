@@ -4,7 +4,6 @@ from argparse import ArgumentParser
 
 import cv2
 import pydantic
-from model_benchmark_api import Device
 from visualization import draw_age_gender_recognition_result
 
 from age_gender_recognition_retail import InferenceModel
@@ -50,7 +49,6 @@ def inference():
     model_path = os.path.join(dir_name, "checkpoint")
     model = InferenceModel(model_path=model_path)
     model.model_load()
-    model.to_device(Device.cpu)
     inference_results = []
     if args.video:
         cap = cv2.VideoCapture(args.video)

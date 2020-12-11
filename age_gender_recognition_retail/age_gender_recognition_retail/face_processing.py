@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 import cv2
 import depthai as dai
 import numpy as np
-from model_benchmark_api import BBox
+from model_api import BBox
 
 
 def pad_img(img, pad_value, target_dims):

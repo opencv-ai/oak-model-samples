@@ -1,15 +1,14 @@
 import os
-from datetime import datetime, timedelta
 
 import cv2
 import depthai as dai
 import numpy as np
-from model_benchmark_api import AgeGenderLabel, BaseModel, Label, TaskType
+from model_api import AgeGenderLabel, BaseInferenceModel, Label
 
 from .face_processing import FaceProcessor, pad_img, wait_for_results
 
 
-class InferenceModel(BaseModel):
+class InferenceModel(BaseInferenceModel):
     def __init__(
         self,
         model_path: str,
@@ -126,7 +125,6 @@ class InferenceModel(BaseModel):
         age_gender_nn.out.link(age_gender_out.input)
 
     def model_load(self):
-        self.task_type = TaskType.age_gender_recognition
 
         model_blob = {
             "detector": os.path.join(self.model_path, "stage_1.blob"),
@@ -161,9 +159,6 @@ class InferenceModel(BaseModel):
             results.append(sample_results)
         data[0] = results
         return data
-
-    def to_device(self, device):
-        pass
 
     def process_sample(self, image):
         data = self.preprocess([image])
