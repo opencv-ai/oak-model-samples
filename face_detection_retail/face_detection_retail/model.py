@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 import cv2
 import depthai as dai
 import numpy as np
-from model_benchmark_api import BaseModel, BBox, TaskType
+from model_api import BaseInferenceModel, BBox
 
 
 def pad_img(img, pad_value, target_dims):
@@ -29,7 +29,7 @@ def wait_for_results(queue):
     return True
 
 
-class InferenceModel(BaseModel):
+class InferenceModel(BaseInferenceModel):
     def __init__(
         self,
         model_path: str,
@@ -44,6 +44,10 @@ class InferenceModel(BaseModel):
             0: "background",
             1: "person",
         }
+        self.input_width, self.input_height = (
+            300,
+            300,
+        )
 
     def preprocess(self, data):
         preprocessed_data = []
@@ -121,8 +125,6 @@ class InferenceModel(BaseModel):
         model.out.link(data_out.input)
 
     def model_load(self):
-        self.task_type = TaskType.detection
-
         model_blob = os.path.join(self.model_path, "model.blob")
         self.create_pipeline(model_blob)
 
@@ -130,11 +132,6 @@ class InferenceModel(BaseModel):
         self.oak_device.startPipeline()
         self.data_in = self.oak_device.getInputQueue("data_in")
         self.data_out = self.oak_device.getOutputQueue("data_out")
-
-        self.input_width, self.input_height = (
-            300,
-            300,
-        )  # We can't get net input sizes from the blob directly without parsing it
 
         return self.pipeline
 
@@ -148,9 +145,6 @@ class InferenceModel(BaseModel):
             results.append(self.data_out.get())
         data[0] = results
         return data
-
-    def to_device(self, device):
-        pass
 
     def process_sample(self, image):
         data = self.preprocess([image])

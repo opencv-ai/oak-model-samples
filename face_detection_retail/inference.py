@@ -4,8 +4,7 @@ from argparse import ArgumentParser
 
 import cv2
 import pydantic
-from model_benchmark_api import Device
-from visualization import draw_detection_result
+from model_api import draw_detection_result
 
 from face_detection_retail import InferenceModel
 
@@ -50,7 +49,6 @@ def inference():
     model_path = os.path.join(dir_name, "checkpoint")
     model = InferenceModel(model_path=model_path)
     model.model_load()
-    model.to_device(Device.cpu)
     inference_results = []
     if args.video:
         cap = cv2.VideoCapture(args.video)
@@ -62,7 +60,7 @@ def inference():
             ret = model.process_sample(image)
             inference_results.append(ret)
             if args.visualization:
-                vis_result = draw_detection_result(image, ret)
+                vis_result = draw_detection_result(image, ret)[-1]
                 cv2.imshow("Visualization", vis_result)
                 if cv2.waitKey(1) == ord("q"):
                     cv2.destroyAllWindows()
@@ -81,7 +79,7 @@ def inference():
             inference_results.append(ret)
             if args.visualization:
                 vis_result = draw_detection_result(image, ret)
-                cv2.imshow("Visualization", vis_result)
+                cv2.imshow("Visualization", vis_result[-1])
                 if cv2.waitKey(1) == ord("q"):
                     cv2.destroyAllWindows()
                     break

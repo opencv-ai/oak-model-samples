@@ -11,7 +11,7 @@ The original model could be found in Intel Open Model Zoo, and the model card is
 ## Installation
 
 1. Purchase a DepthAI model (see [shop.luxonis.com](https://shop.luxonis.com/))
-2. Setup a package `python setup.py install` (use `python setup.py develop` for development installation)
+2. Setup a package `pip install . -f https://artifacts.luxonis.com/artifactory/luxonis-python-snapshot-local/depthai/` (add `-e` to install in editable mode `pip install -e . -f ...`).
 
 ## Usage
 
