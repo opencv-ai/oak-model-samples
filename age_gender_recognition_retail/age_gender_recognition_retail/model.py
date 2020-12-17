@@ -3,20 +3,20 @@ import os
 import cv2
 import depthai as dai
 import numpy as np
-from model_api import AgeGenderLabel, BaseInferenceModel, Label
+from modelplace_api import AgeGenderLabel, BaseModel, Label
 
 from .face_processing import FaceProcessor, pad_img, wait_for_results
 
 
-class InferenceModel(BaseInferenceModel):
+class InferenceModel(BaseModel):
     def __init__(
-        self,
-        model_path: str,
-        model_name: str = "",
-        model_description: str = "",
-        threshold: float = 0.1,
-        area_threshold: float = 0.6,
-        **kwargs,
+            self,
+            model_path: str,
+            model_name: str = "",
+            model_description: str = "",
+            threshold: float = 0.1,
+            area_threshold: float = 0.6,
+            **kwargs,
     ):
         super().__init__(model_path, model_name, model_description, **kwargs)
         self.area_threshold = area_threshold
@@ -46,9 +46,9 @@ class InferenceModel(BaseInferenceModel):
                 if areas[j] < self.area_threshold * max_area:
                     continue
                 cropped_face = img[
-                    int(face_bbox.y1) : int(face_bbox.y2),
-                    int(face_bbox.x1) : int(face_bbox.x2),
-                ]
+                               int(face_bbox.y1): int(face_bbox.y2),
+                               int(face_bbox.x1): int(face_bbox.x2),
+                               ]
                 height, width, _ = cropped_face.shape
                 if self.input_height / self.input_width < height / width:
                     scale = self.input_height / height
@@ -197,3 +197,6 @@ class InferenceModel(BaseInferenceModel):
         self.age_gender_out = self.oak_device.getOutputQueue("age_gender_out")
 
         return cam_queue
+
+    def to_device(self, _) -> None:
+        pass

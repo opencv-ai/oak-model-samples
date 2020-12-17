@@ -1,30 +1,12 @@
 import json
 import os
 
-import numpy as np
 import pydantic
-from model_benchmark_api import Device
+from modelplace_api import Device
 from PIL import Image
 
 from face_detection_retail import InferenceModel
-
-
-def is_equal(result, gt, error=0.001) -> bool:
-    if type(result) != type(gt):
-        raise TypeError
-    ret = True
-    if isinstance(result, dict):
-        for key in result:
-            ret = ret and is_equal(result[key], gt[key], error)
-    elif isinstance(result, list):
-        for r, g in zip(result, gt):
-            ret = ret and is_equal(r, g, error)
-    elif isinstance(result, str):
-        ret = ret and result == gt
-    else:
-        ret = ret and np.isclose(result, gt, rtol=error)
-    return ret
-
+from modelplace_api.utils import is_equal
 
 dir_name = os.path.abspath(os.path.dirname(__file__))
 model_path = os.path.join(os.path.dirname(dir_name), "checkpoint")

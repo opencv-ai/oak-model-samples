@@ -2,7 +2,8 @@ from typing import List
 
 import cv2
 import numpy as np
-from model_api import RGB_COLORS, AgeGenderLabel, draw_classification_legend
+from modelplace_api.visualization import RGB_COLORS, draw_classification_legend
+from modelplace_api import AgeGenderLabel
 
 
 def draw_age_gender_recognition_result(

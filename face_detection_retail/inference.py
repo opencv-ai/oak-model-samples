@@ -4,7 +4,7 @@ from argparse import ArgumentParser
 
 import cv2
 import pydantic
-from model_api import draw_detection_result
+from modelplace_api.visualization import draw_detection_result
 
 from face_detection_retail import InferenceModel
 

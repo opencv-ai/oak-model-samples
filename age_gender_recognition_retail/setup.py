@@ -8,10 +8,10 @@ package_data = {
 }
 
 install_requires = [
-    "depthai==0.0.2.1+22ad34c8264fc3a9a919dbc5c01e3ed3eb41f5aa",
-    "model-api @ git+https://github.com/opencv-ai/model-api.git@ps/public-api#egg=model-api-0.2.0",
+    # "depthai==0.0.2.1+7f0633a6f04e5b0c925d372ddc025ddab3879614",
+    "modelplace-api@git+https://github.com/opencv-ai/modelplace-api.git#egg=modelplace-api-0.2.0",
 ]
-
+# depthai@git+https://github.com/luxonis/depthai-python@gen2_develop#depthai-0.2.0
 setup_kwargs = {
     "name": "age_gender_recognition_retail",
     "version": "0.2.0",

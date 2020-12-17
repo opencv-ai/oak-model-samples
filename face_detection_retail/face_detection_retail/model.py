@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 import cv2
 import depthai as dai
 import numpy as np
-from model_api import BaseInferenceModel, BBox
+from modelplace_api import BaseModel, BBox
 
 
 def pad_img(img, pad_value, target_dims):
@@ -29,7 +29,7 @@ def wait_for_results(queue):
     return True
 
 
-class InferenceModel(BaseInferenceModel):
+class InferenceModel(BaseModel):
     def __init__(
         self,
         model_path: str,
@@ -172,3 +172,6 @@ class InferenceModel(BaseInferenceModel):
         self.data_out = self.oak_device.getOutputQueue("data_out")
 
         return cam_queue
+
+    def to_device(self, _) -> None:
+        pass
