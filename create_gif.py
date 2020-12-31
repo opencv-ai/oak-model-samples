@@ -101,7 +101,7 @@ def main():
             "mapping_classes_to_points": mapping_classes_to_points,
             "confidence_threshold": args.threshold,
         }
-    elif args.model == "landmarks_regression_retail":
+    elif args.model == "landmarks_regression_retail" or args.model == "dbface":
         classes = [
             "Left Eye",
             "Right Eye",
