@@ -2,12 +2,12 @@ import json
 import os
 
 import pydantic
+from core.utils import is_equal
 from modelplace_api import Device
 from modelplace_api.visualization import draw_landmarks_result
-from blaze_face import InferenceModel
 from PIL import Image
 
-from core.utils import is_equal
+from blaze_face import InferenceModel
 
 # dir_name = os.path.abspath(os.path.dirname(__file__))
 # model_path = os.path.join(
@@ -27,7 +27,7 @@ dir_name = os.path.abspath(os.path.dirname(__file__))
 model_path = os.path.join(os.path.dirname(dir_name), "checkpoint")
 test_image_path = os.path.join(dir_name, "kylie-walnut-scrub.jpg")
 # test_result_path = os.path.join(dir_name, "face_detection_gt.json")
-test_image = Image.open(test_image_path).convert('RGB')
+test_image = Image.open(test_image_path).convert("RGB")
 
 
 def test_process_sample_blaze_face():
@@ -36,11 +36,16 @@ def test_process_sample_blaze_face():
     model.to_device(Device.cpu)
     ret = model.process_sample(test_image)
     import cv2
+
     classes = [str(i) for i in range(6)]
     map_classes = dict([(str(i), [i]) for i in range(5)])
-    cv2.imshow("", draw_landmarks_result(test_image, ret, classes, map_classes, 0)[-1][:,:,::-1])
+    cv2.imshow(
+        "",
+        draw_landmarks_result(test_image, ret, classes, map_classes, 0)[-1][:, :, ::-1],
+    )
     cv2.waitKey(0)
     ret = [pydantic.json.pydantic_encoder(item) for item in ret]
     # assert is_equal(ret, test_result["detection"])
+
 
 test_process_sample_blaze_face()

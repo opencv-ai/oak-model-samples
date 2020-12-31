@@ -1,13 +1,12 @@
 import math
 import os
-from operator import itemgetter
-
-import numpy as np
-from modelplace_api import BaseModel, Joint, Link, Pose
 from datetime import datetime, timedelta
+from operator import itemgetter
 
 import cv2
 import depthai as dai
+import numpy as np
+from modelplace_api import BaseModel, Joint, Link, Pose
 
 
 def wait_for_results(queue):
@@ -16,6 +15,7 @@ def wait_for_results(queue):
         if datetime.now() - start > timedelta(seconds=1):
             return False
     return True
+
 
 BODY_PARTS_KPT_IDS = [
     [1, 2],
@@ -388,11 +388,11 @@ class InferenceModel(BaseModel):
     ]
 
     def __init__(
-            self,
-            model_path: str,
-            model_name: str = "",
-            model_description: str = "",
-            **kwargs,
+        self,
+        model_path: str,
+        model_name: str = "",
+        model_description: str = "",
+        **kwargs,
     ):
         super().__init__(model_path, model_name, model_description, **kwargs)
         self.stride = 8
@@ -430,7 +430,9 @@ class InferenceModel(BaseModel):
         postprocessed_detections = []
         for result, img_data in zip(results[0], results[1]):
             scale, pad = img_data
-            stage2_heatmaps = np.array(result.getLayerFp16(result.getAllLayerNames()[-1])).reshape((1, 19, 32, 57))
+            stage2_heatmaps = np.array(
+                result.getLayerFp16(result.getAllLayerNames()[-1]),
+            ).reshape((1, 19, 32, 57))
             heatmaps = np.transpose(stage2_heatmaps[0], (1, 2, 0))
             heatmaps = cv2.resize(
                 heatmaps,
@@ -440,7 +442,9 @@ class InferenceModel(BaseModel):
                 interpolation=cv2.INTER_CUBIC,
             )
 
-            stage2_pafs = np.array(result.getLayerFp16(result.getAllLayerNames()[-2])).reshape((1, 38, 32, 57))
+            stage2_pafs = np.array(
+                result.getLayerFp16(result.getAllLayerNames()[-2]),
+            ).reshape((1, 38, 32, 57))
             pafs = np.transpose(stage2_pafs[0], (1, 2, 0))
             pafs = cv2.resize(
                 pafs,

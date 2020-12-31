@@ -4,14 +4,16 @@ import os
 import pydantic
 from modelplace_api import Device
 from modelplace_api.utils import is_equal
-from person_vehicle_bike_detection_crossroad import InferenceModel
 from PIL import Image
 
+from person_vehicle_bike_detection_crossroad import InferenceModel
 
 dir_name = os.path.abspath(os.path.dirname(__file__))
 model_path = os.path.join(os.path.dirname(dir_name), "checkpoint")
 test_image_path = os.path.join(dir_name, "person_vehicle_bike_detection_crossroad.jpg")
-test_result_path = os.path.join(dir_name, "person_vehicle_bike_detection_crossroad_gt.json")
+test_result_path = os.path.join(
+    dir_name, "person_vehicle_bike_detection_crossroad_gt.json",
+)
 
 test_image = Image.open(test_image_path)
 with open(test_result_path, "r") as j_file:

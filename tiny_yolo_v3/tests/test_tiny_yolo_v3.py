@@ -4,17 +4,16 @@ import os
 import pydantic
 from modelplace_api import Device
 from modelplace_api.utils import is_equal
-
-from tiny_yolo_v3 import InferenceModel
 from PIL import Image
 
+from tiny_yolo_v3 import InferenceModel
 
 dir_name = os.path.abspath(os.path.dirname(__file__))
 model_path = os.path.join(os.path.dirname(dir_name), "checkpoint")
 test_image_path = os.path.join(dir_name, "mobilenet_ssd.jpg")
 test_result_path = os.path.join(dir_name, "tiny_yolo_v3_gt.json")
 
-test_image = Image.open(test_image_path).convert('RGB')
+test_image = Image.open(test_image_path).convert("RGB")
 with open(test_result_path, "r") as j_file:
     test_result = json.loads(j_file.read())
 

@@ -40,11 +40,13 @@ def parse_args():
         type=str,
         metavar=("WIDTHxHEIGHT"),
     )
-    parser.add_argument("--threshold",
-                        "-tr",
-                        help="Threshold for model predictions",
-                        default=0.1,
-                        type=float)
+    parser.add_argument(
+        "--threshold",
+        "-tr",
+        help="Threshold for model predictions",
+        default=0.1,
+        type=float,
+    )
     return parser.parse_args()
 
 

@@ -4,14 +4,12 @@ import os
 import pydantic
 from modelplace_api import Device
 from modelplace_api.utils import is_equal
-from person_detection_retail import InferenceModel
 from PIL import Image
 
+from person_detection_retail import InferenceModel
+
 dir_name = os.path.abspath(os.path.dirname(__file__))
-model_path = os.path.join(
-    os.path.dirname(dir_name),
-    "checkpoint",
-)
+model_path = os.path.join(os.path.dirname(dir_name), "checkpoint")
 test_image_path = os.path.join(dir_name, "openvino_person_detection_retail.jpg")
 test_result_path = os.path.join(dir_name, "openvino_person_detection_retail_gt.json")
 

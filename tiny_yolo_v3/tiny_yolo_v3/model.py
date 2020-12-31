@@ -52,13 +52,13 @@ class DetectionObject:
 
 class InferenceModel(BaseModel):
     def __init__(
-            self,
-            model_path: str,
-            model_name: str = "",
-            model_description: str = "",
-            threshold: float = 0.1,
-            iou_threshold: float = 0.4,
-            **kwargs,
+        self,
+        model_path: str,
+        model_name: str = "",
+        model_description: str = "",
+        threshold: float = 0.1,
+        iou_threshold: float = 0.4,
+        **kwargs,
     ):
         super().__init__(model_path, model_name, model_description, **kwargs)
         self.threshold = threshold
@@ -160,8 +160,7 @@ class InferenceModel(BaseModel):
         )
 
     def parse_yolov3_output(
-            self, blob, resized_im_h, resized_im_w, original_im_h, original_im_w,
-            threshold,
+        self, blob, resized_im_h, resized_im_w, original_im_h, original_im_w, threshold,
     ):
         num = 3
         coords = 4
@@ -197,22 +196,22 @@ class InferenceModel(BaseModel):
                 if scale < threshold:
                     continue
                 x = (
-                        (col + output_blob[box_index + 0 * side_square])
-                        / side
-                        * resized_im_w
+                    (col + output_blob[box_index + 0 * side_square])
+                    / side
+                    * resized_im_w
                 )
                 y = (
-                        (row + output_blob[box_index + 1 * side_square])
-                        / side
-                        * resized_im_h
+                    (row + output_blob[box_index + 1 * side_square])
+                    / side
+                    * resized_im_h
                 )
                 height = (
-                        math.exp(output_blob[box_index + 3 * side_square])
-                        * self.anchors[anchor_offset + 2 * n + 1]
+                    math.exp(output_blob[box_index + 3 * side_square])
+                    * self.anchors[anchor_offset + 2 * n + 1]
                 )
                 width = (
-                        math.exp(output_blob[box_index + 2 * side_square])
-                        * self.anchors[anchor_offset + 2 * n]
+                    math.exp(output_blob[box_index + 2 * side_square])
+                    * self.anchors[anchor_offset + 2 * n]
                 )
                 for j in range(len(self.class_names) - 1):
                     class_index = self.entryindex(
@@ -269,12 +268,21 @@ class InferenceModel(BaseModel):
             original_h, original_w = input_info
             h, w = self.input_height, self.input_width
             output_shapes = [(-1, 255, 26, 26), (-1, 255, 13, 13)]
-            for output_name, output_shape in zip(result.getAllLayerNames(),
-                                                 output_shapes):
-                objects.extend(self.parse_yolov3_output(
-                    np.array(result.getLayerFp16(output_name)).reshape(output_shape),
-                    h, w, original_h, original_w, self.iou_threshold,
-                ))
+            for output_name, output_shape in zip(
+                result.getAllLayerNames(), output_shapes,
+            ):
+                objects.extend(
+                    self.parse_yolov3_output(
+                        np.array(result.getLayerFp16(output_name)).reshape(
+                            output_shape,
+                        ),
+                        h,
+                        w,
+                        original_h,
+                        original_w,
+                        self.iou_threshold,
+                    ),
+                )
             objects = self.nms(objects)
             image_predictions = []
             for obj in objects:

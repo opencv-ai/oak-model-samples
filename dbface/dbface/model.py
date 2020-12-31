@@ -1,10 +1,10 @@
 import math
 import os
+from datetime import datetime, timedelta
 
 import cv2
-from modelplace_api import BaseModel, BBox, FacialLandmarks, Point, TaskType
 import depthai as dai
-from datetime import datetime, timedelta
+from modelplace_api import BaseModel, BBox, FacialLandmarks, Point, TaskType
 
 from .utils import *
 
@@ -73,11 +73,21 @@ class InferenceModel(BaseModel):
             h, w = self.input_height, self.input_width
             original_h = int(h / scale_y)
             original_w = int(w / scale_x)
-            hm = np.array(result.getLayerFp16(result.getAllLayerNames()[2])).reshape((1, 1, 120, 160))
-            box = np.array(result.getLayerFp16(result.getAllLayerNames()[1])).reshape((1, 4, 120, 160))
-            landmark = np.array(result.getLayerFp16(result.getAllLayerNames()[0])).reshape((1, 10, 120, 160))
+            hm = np.array(result.getLayerFp16(result.getAllLayerNames()[2])).reshape(
+                (1, 1, 120, 160),
+            )
+            box = np.array(result.getLayerFp16(result.getAllLayerNames()[1])).reshape(
+                (1, 4, 120, 160),
+            )
+            landmark = np.array(
+                result.getLayerFp16(result.getAllLayerNames()[0]),
+            ).reshape((1, 10, 120, 160))
             objs = detect(
-                hm=hm, box=box, landmark=landmark, threshold=self.threshold, nms_iou=0.5,
+                hm=hm,
+                box=box,
+                landmark=landmark,
+                threshold=self.threshold,
+                nms_iou=0.5,
             )
             image_predictions = []
             for obj in objs:

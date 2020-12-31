@@ -3,10 +3,10 @@ import os
 
 import pydantic
 from modelplace_api import Device
-from face_detection_adas import InferenceModel
-from PIL import Image
 from modelplace_api.utils import is_equal
+from PIL import Image
 
+from face_detection_adas import InferenceModel
 
 dir_name = os.path.abspath(os.path.dirname(__file__))
 model_path = os.path.join(os.path.dirname(dir_name), "checkpoint")
@@ -25,4 +25,6 @@ def test_process_sample_face_detection_adas():
     ret = model.process_sample(test_image)
     ret = [pydantic.json.pydantic_encoder(item) for item in ret]
     assert is_equal(ret, test_result["detection"])
+
+
 test_process_sample_face_detection_adas()

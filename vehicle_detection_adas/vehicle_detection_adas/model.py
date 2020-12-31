@@ -1,12 +1,11 @@
 import math
 import os
+from datetime import datetime, timedelta
 
 import cv2
+import depthai as dai
 import numpy as np
 from modelplace_api import BaseModel, BBox
-
-import depthai as dai
-from datetime import datetime, timedelta
 
 
 def wait_for_results(queue):
@@ -83,7 +82,9 @@ class InferenceModel(BaseModel):
         for result, input_info in zip(predictions[0], predictions[1]):
             scale, pads = input_info
             h, w = self.input_height, self.input_width
-            boxes = np.array(result.getLayerFp16(result.getAllLayerNames()[0])).reshape(-1, 7,)
+            boxes = np.array(result.getLayerFp16(result.getAllLayerNames()[0])).reshape(
+                -1, 7,
+            )
             image_predictions = []
             for box in boxes:
                 if box[2] > self.threshold:  # confidence > threshold

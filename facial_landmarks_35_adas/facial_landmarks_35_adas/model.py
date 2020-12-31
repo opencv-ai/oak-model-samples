@@ -3,22 +3,21 @@ import os
 import cv2
 import depthai as dai
 import numpy as np
-from modelplace_api import BaseModel
-from modelplace_api import FacialLandmarks, Point
+from modelplace_api import BaseModel, FacialLandmarks, Point
 
 from .face_processing import FaceProcessor, pad_img, wait_for_results
 
 
 class InferenceModel(BaseModel):
     def __init__(
-            self,
-            model_path: str,
-            model_name: str = "",
-            model_description: str = "",
-            threshold: float = 0.1,
-            area_threshold: float = 0.6,
-            face_bbox_pad_percent: float = 0.25,
-            **kwargs,
+        self,
+        model_path: str,
+        model_name: str = "",
+        model_description: str = "",
+        threshold: float = 0.1,
+        area_threshold: float = 0.6,
+        face_bbox_pad_percent: float = 0.25,
+        **kwargs,
     ):
         super().__init__(model_path, model_name, model_description, **kwargs)
         self.face_processor = FaceProcessor(threshold)
@@ -58,9 +57,9 @@ class InferenceModel(BaseModel):
                     face_bbox.x2 + face_bbox_width * self.face_bbox_pad_percent,
                 )
                 cropped_face = img[
-                               int(face_bbox.y1): int(face_bbox.y2),
-                               int(face_bbox.x1): int(face_bbox.x2),
-                               ]
+                    int(face_bbox.y1) : int(face_bbox.y2),
+                    int(face_bbox.x1) : int(face_bbox.x2),
+                ]
                 height, width, _ = cropped_face.shape
                 if self.input_height / self.input_width < height / width:
                     scale = self.input_height / height
@@ -154,9 +153,11 @@ class InferenceModel(BaseModel):
         self.face_detector_in = self.oak_device.getInputQueue("face_detector_in")
         self.face_detector_out = self.oak_device.getOutputQueue("face_detector_out")
         self.landmark_detector_in = self.oak_device.getInputQueue(
-            "landmark_detector_in")
+            "landmark_detector_in",
+        )
         self.landmark_detector_out = self.oak_device.getOutputQueue(
-            "landmark_detector_out")
+            "landmark_detector_out",
+        )
 
     def forward(self, data):
         results = []
@@ -207,9 +208,11 @@ class InferenceModel(BaseModel):
         self.face_detector_in = self.oak_device.getInputQueue("face_detector_in")
         self.face_detector_out = self.oak_device.getOutputQueue("face_detector_out")
         self.landmark_detector_in = self.oak_device.getInputQueue(
-            "landmark_detector_in")
+            "landmark_detector_in",
+        )
         self.landmark_detector_out = self.oak_device.getOutputQueue(
-            "landmark_detector_out")
+            "landmark_detector_out",
+        )
 
         return cam_queue
 

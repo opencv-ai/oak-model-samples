@@ -1,9 +1,11 @@
 import importlib
 import inspect
-from modelplace_api.visualization import create_gif
-from os import path as osp
 from argparse import ArgumentParser
+from os import path as osp
+
 import cv2
+from modelplace_api.visualization import create_gif
+
 
 def get_class(class_str: str):
     spec = importlib.util.find_spec(".".join(class_str.split(".")[:-1]))
@@ -15,7 +17,9 @@ def get_class(class_str: str):
         spec.loader.exec_module(module)
 
     module_classes = [item[0] for item in inspect.getmembers(module, inspect.isclass)]
-    module_classes.extend([item[0] for item in inspect.getmembers(module, inspect.isfunction)])
+    module_classes.extend(
+        [item[0] for item in inspect.getmembers(module, inspect.isfunction)],
+    )
     if class_name in module_classes:
         return getattr(module, class_name)
     else:
@@ -24,11 +28,43 @@ def get_class(class_str: str):
 
 def main():
     parser = ArgumentParser()
-    parser.add_argument("-model", '-m', help='Model to create gif for', type=str, metavar=("MODELNAME"), required=True)
-    parser.add_argument("--checkpoint", "-c", help="Path to model checkpoint. We assume MODELNAME/checkpoint by default", default="checkpoint", type=str)
-    parser.add_argument("-vis_func", "-vf", help="Class for model visualization", type=str, metavar=("VISCLASS"), required=True)
-    parser.add_argument("-video", '-v', help='Path to video file for creating gif', type=str, required=True)
-    parser.add_argument("--save_path", "-s", default=None, help='Save path for the created gif. By default we save in the video folder', type=str)
+    parser.add_argument(
+        "-model",
+        "-m",
+        help="Model to create gif for",
+        type=str,
+        metavar=("MODELNAME"),
+        required=True,
+    )
+    parser.add_argument(
+        "--checkpoint",
+        "-c",
+        help="Path to model checkpoint. We assume MODELNAME/checkpoint by default",
+        default="checkpoint",
+        type=str,
+    )
+    parser.add_argument(
+        "-vis_func",
+        "-vf",
+        help="Class for model visualization",
+        type=str,
+        metavar=("VISCLASS"),
+        required=True,
+    )
+    parser.add_argument(
+        "-video",
+        "-v",
+        help="Path to video file for creating gif",
+        type=str,
+        required=True,
+    )
+    parser.add_argument(
+        "--save_path",
+        "-s",
+        default=None,
+        help="Save path for the created gif. By default we save in the video folder",
+        type=str,
+    )
     args = parser.parse_args()
     class_definition = get_class(args.model + ".InferenceModel")
     visualization = get_class(args.vis_func)
@@ -55,6 +91,7 @@ def main():
     else:
         save_path = args.save_path
     create_gif(vis_results, save_path, fps=10)
+
 
 if __name__ == "__main__":
     main()

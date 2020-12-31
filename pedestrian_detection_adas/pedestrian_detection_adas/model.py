@@ -1,11 +1,11 @@
 import math
 import os
+from datetime import datetime, timedelta
 
 import cv2
+import depthai as dai
 import numpy as np
 from modelplace_api import BaseModel, BBox
-from datetime import datetime, timedelta
-import depthai as dai
 
 
 def wait_for_results(queue):
@@ -27,6 +27,7 @@ def pad_img(img, pad_value, target_dims):
         img, pads[0], pads[2], pads[1], pads[3], cv2.BORDER_CONSTANT, value=pad_value,
     )
     return padded_img, pads
+
 
 class InferenceModel(BaseModel):
     def __init__(

@@ -3,10 +3,10 @@ import os
 
 import pydantic
 from modelplace_api import Device
+from modelplace_api.utils import is_equal
 from PIL import Image
 
 from face_detection_retail import InferenceModel
-from modelplace_api.utils import is_equal
 
 dir_name = os.path.abspath(os.path.dirname(__file__))
 model_path = os.path.join(os.path.dirname(dir_name), "checkpoint")
