@@ -101,6 +101,26 @@ def main():
             "mapping_classes_to_points": mapping_classes_to_points,
             "confidence_threshold": args.threshold,
         }
+    elif args.model == "landmarks_regression_retail":
+        classes = [
+            "Left Eye",
+            "Right Eye",
+            "Nose",
+            "Left Lip Corner",
+            "Right Lip Corner",
+        ]
+        mapping_classes_to_points = {
+            classes[0]: [0],
+            classes[1]: [1],
+            classes[2]: [2],
+            classes[3]: [3],
+            classes[4]: [4],
+        }
+        kwargs = {
+            "classes": classes,
+            "mapping_classes_to_points": mapping_classes_to_points,
+            "confidence_threshold": args.threshold,
+        }
     model.model_load()
     cap = cv2.VideoCapture(args.video)
     vis_results = []
