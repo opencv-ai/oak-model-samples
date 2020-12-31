@@ -175,7 +175,7 @@ class InferenceModel(BaseModel):
 
     def process_sample(self, image):
         data = self.preprocess([image])
-        if data is None:
+        if not len(data[0]):
             return []
         output = self.forward(data)
         results = self.postprocess(output)

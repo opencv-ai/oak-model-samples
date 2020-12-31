@@ -65,12 +65,42 @@ def main():
         help="Save path for the created gif. By default we save in the video folder",
         type=str,
     )
+    parser.add_argument(
+        "--threshold", "-tr", help="Threshold for model", default=0.6, type=float,
+    )
     args = parser.parse_args()
     class_definition = get_class(args.model + ".InferenceModel")
     visualization = get_class(args.vis_func)
     if class_definition is None or visualization is None:
         raise ImportError
-    model = class_definition(osp.join(args.model, args.checkpoint), threshold=0.6)
+    model = class_definition(
+        osp.join(args.model, args.checkpoint), threshold=args.threshold,
+    )
+    kwargs = {}
+    if args.model == "facial_landmarks_35_adas":
+        classes = [
+            "Left Eye",
+            "Right Eye",
+            "Nose",
+            "Mouth",
+            "Left Eyebrow",
+            "Right Eyebrow",
+            "Face Contour",
+        ]
+        mapping_classes_to_points = {
+            classes[0]: [0, 1],
+            classes[1]: [2, 3],
+            classes[2]: [4, 5, 6, 7],
+            classes[3]: [8, 9, 10, 11],
+            classes[4]: [12, 13, 14],
+            classes[5]: [15, 16, 17],
+            classes[6]: [x for x in range(18, 35)],
+        }
+        kwargs = {
+            "classes": classes,
+            "mapping_classes_to_points": mapping_classes_to_points,
+            "confidence_threshold": args.threshold,
+        }
     model.model_load()
     cap = cv2.VideoCapture(args.video)
     vis_results = []
@@ -80,7 +110,7 @@ def main():
             cv2.destroyAllWindows()
             break
         ret = model.process_sample(image)
-        vis_result = visualization(image, ret)[-1]
+        vis_result = visualization(image, ret, **kwargs)[-1]
         cv2.imshow("Visualization", vis_result)
         vis_results.append(vis_result[..., ::-1])
         if cv2.waitKey(1) == ord("q"):
