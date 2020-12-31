@@ -47,7 +47,7 @@ def inference():
     args = parse_args()
     dir_name = os.path.abspath(os.path.dirname(__file__))
     model_path = os.path.join(dir_name, "checkpoint")
-    model = InferenceModel(model_path=model_path)
+    model = InferenceModel(model_path=model_path, threshold=0.5)
     model.model_load()
     inference_results = []
     if args.video:
