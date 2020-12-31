@@ -8,10 +8,8 @@ package_data = {
 }
 
 install_requires = [
-    "depthai==0.0.2.1+22ad34c8264fc3a9a919dbc5c01e3ed3eb41f5aa",
-    "opencv-python==4.2.0.34",
-    "numpy==1.16.4",
-    "modelplace-api@git+https://github.com/opencv-ai/modelplace-api.git#egg=modelplace-api-0.2.0",
+    "depthai@git+https://github.com/luxonis/depthai-python@gen2_develop#depthai-0.2.0",
+    "modelplace-api[vis]@git+https://github.com/opencv-ai/modelplace-api.git#egg=modelplace-api-0.2.0",
 ]
 
 setup_kwargs = {

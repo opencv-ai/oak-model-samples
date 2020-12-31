@@ -1,15 +1,11 @@
 import math
 import os
-
-import cv2
-import numpy as np
-from modelplace_api import BaseModel, BBox, TaskType, FacialLandmarks, Point
 from datetime import datetime, timedelta
 
 import cv2
-import numpy as np
-from modelplace_api import BaseModel, BBox
 import depthai as dai
+import numpy as np
+from modelplace_api import BaseModel, BBox, FacialLandmarks, Point, TaskType
 
 
 def wait_for_results(queue):
@@ -18,6 +14,7 @@ def wait_for_results(queue):
         if datetime.now() - start > timedelta(seconds=1):
             return False
     return True
+
 
 class BlazeDecoder:
     def __init__(self, score_threshold=0.75, iou_threshold=0.3):
@@ -57,7 +54,7 @@ class BlazeDecoder:
 
         thresh = self.score_clipping_thresh
         raw_score_tensor = raw_score_tensor.clip(-thresh, thresh)
-        detection_scores = 1 / (1 + np.exp(- raw_score_tensor)).squeeze(axis=-1)
+        detection_scores = 1 / (1 + np.exp(-raw_score_tensor)).squeeze(axis=-1)
 
         # Note: we stripped off the last dimension from the scores tensor
         # because there is only has one class. Now we can simply use a mask
@@ -87,29 +84,35 @@ class BlazeDecoder:
         w = raw_boxes[..., 2] / self.w_scale * anchors[:, 2]
         h = raw_boxes[..., 3] / self.h_scale * anchors[:, 3]
 
-        boxes[..., 0] = y_center - h / 2.  # ymin
-        boxes[..., 1] = x_center - w / 2.  # xmin
-        boxes[..., 2] = y_center + h / 2.  # ymax
-        boxes[..., 3] = x_center + w / 2.  # xmax
+        boxes[..., 0] = y_center - h / 2.0  # ymin
+        boxes[..., 1] = x_center - w / 2.0  # xmin
+        boxes[..., 2] = y_center + h / 2.0  # ymax
+        boxes[..., 3] = x_center + w / 2.0  # xmax
 
         for k in range(6):
             offset = 4 + k * 2
-            keypoint_x = raw_boxes[..., offset] / self.x_scale * anchors[:,
-                                                                 2] + anchors[:, 0]
-            keypoint_y = raw_boxes[..., offset + 1] / self.y_scale * anchors[:,
-                                                                     3] + anchors[:, 1]
+            keypoint_x = (
+                raw_boxes[..., offset] / self.x_scale * anchors[:, 2] + anchors[:, 0]
+            )
+            keypoint_y = (
+                raw_boxes[..., offset + 1] / self.y_scale * anchors[:, 3]
+                + anchors[:, 1]
+            )
             boxes[..., offset] = keypoint_x
             boxes[..., offset + 1] = keypoint_y
 
         return boxes
 
     def nms(self, detections):
-        bboxes = np.concatenate([detections[:, 0:2],
-                                 detections[:, 2:4] - detections[:, 0:2]], axis=1)
-        indeces = cv2.dnn.NMSBoxes(bboxes.tolist(),
-                                   detections[:, 16].tolist(),
-                                   self.min_score_thresh,
-                                   self.min_suppression_threshold)
+        bboxes = np.concatenate(
+            [detections[:, 0:2], detections[:, 2:4] - detections[:, 0:2]], axis=1,
+        )
+        indeces = cv2.dnn.NMSBoxes(
+            bboxes.tolist(),
+            detections[:, 16].tolist(),
+            self.min_score_thresh,
+            self.min_suppression_threshold,
+        )
         return [detections[id[0]] for id in indeces]
 
 
@@ -133,13 +136,13 @@ def pad_img(img, pad_value, target_dims):
 
 class InferenceModel(BaseModel):
     def __init__(
-            self,
-            model_path: str,
-            model_name: str = "",
-            model_description: str = "",
-            threshold: float = 0.4,
-            iou_threshold: float = 0.3,
-            **kwargs,
+        self,
+        model_path: str,
+        model_name: str = "",
+        model_description: str = "",
+        threshold: float = 0.4,
+        iou_threshold: float = 0.3,
+        **kwargs,
     ):
         super().__init__(model_path, model_name, model_description, **kwargs)
         self.threshold = threshold
@@ -187,24 +190,39 @@ class InferenceModel(BaseModel):
         for result, input_info in zip(predictions[0], predictions[1]):
             scale, pads = input_info
             h, w = self.input_height, self.input_width
-            raw_scores = np.concatenate([
-                np.array(result.getLayerFp16(
-                    'StatefulPartitionedCall/functional_1/tf_op_layer_classificators_1/classificators_1')).reshape(
-                    (-1, 512, 1)),
-                np.array(result.getLayerFp16(
-                    'StatefulPartitionedCall/functional_1/tf_op_layer_classificators_2/classificators_2')).reshape(
-                    (-1, 384, 1)),
-            ], axis=1)
-            raw_bboxes = np.concatenate([
-                np.array(result.getLayerFp16(
-                    'StatefulPartitionedCall/functional_1/tf_op_layer_regressors_1/regressors_1'))
-                    .reshape((-1, 512, 16)),
-                np.array(result.getLayerFp16(
-                    'StatefulPartitionedCall/functional_1/tf_op_layer_regressors_2/regressors_2'))
-                    .reshape((-1, 384, 16)),
-            ], axis=1)
-            detections = self.decoder.tensors_to_detections(raw_bboxes, raw_scores,
-                                                            self.anchors)[0]
+            raw_scores = np.concatenate(
+                [
+                    np.array(
+                        result.getLayerFp16(
+                            "StatefulPartitionedCall/functional_1/tf_op_layer_classificators_1/classificators_1",
+                        ),
+                    ).reshape((-1, 512, 1)),
+                    np.array(
+                        result.getLayerFp16(
+                            "StatefulPartitionedCall/functional_1/tf_op_layer_classificators_2/classificators_2",
+                        ),
+                    ).reshape((-1, 384, 1)),
+                ],
+                axis=1,
+            )
+            raw_bboxes = np.concatenate(
+                [
+                    np.array(
+                        result.getLayerFp16(
+                            "StatefulPartitionedCall/functional_1/tf_op_layer_regressors_1/regressors_1",
+                        ),
+                    ).reshape((-1, 512, 16)),
+                    np.array(
+                        result.getLayerFp16(
+                            "StatefulPartitionedCall/functional_1/tf_op_layer_regressors_2/regressors_2",
+                        ),
+                    ).reshape((-1, 384, 16)),
+                ],
+                axis=1,
+            )
+            detections = self.decoder.tensors_to_detections(
+                raw_bboxes, raw_scores, self.anchors,
+            )[0]
             image_predictions = []
             for detection in detections:
                 if detection[16] > self.threshold:
@@ -216,14 +234,17 @@ class InferenceModel(BaseModel):
                                 x2=(float(detection[3]) * w - pads[1]) / scale,
                                 y2=(float(detection[2]) * h - pads[0]) / scale,
                                 score=float(detection[16]),
-                                class_name='Face',
+                                class_name="Face",
                             ),
                             keypoints=[
                                 Point(
                                     x=int(
-                                        (detection[4 + k * 2] * w - pads[1]) / scale),
-                                    y=int((detection[4 + k * 2 + 1] * h - pads[
-                                        0]) / scale),
+                                        (detection[4 + k * 2] * w - pads[1]) / scale,
+                                    ),
+                                    y=int(
+                                        (detection[4 + k * 2 + 1] * h - pads[0])
+                                        / scale,
+                                    ),
                                 )
                                 for k in range(6)
                             ],

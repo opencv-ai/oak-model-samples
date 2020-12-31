@@ -2,9 +2,10 @@ import json
 import os
 
 import pydantic
-from PIL import Image
 from modelplace_api import Device
 from modelplace_api.utils import is_equal
+from PIL import Image
+
 from yolo_v3 import InferenceModel
 
 dir_name = os.path.abspath(os.path.dirname(__file__))

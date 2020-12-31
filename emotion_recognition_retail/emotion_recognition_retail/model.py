@@ -3,21 +3,20 @@ import os
 import cv2
 import depthai as dai
 import numpy as np
-from modelplace_api import BaseModel, Label
-from modelplace_api import EmotionLabel
+from modelplace_api import BaseModel, EmotionLabel, Label
 
 from .face_processing import FaceProcessor, pad_img, wait_for_results
 
 
 class InferenceModel(BaseModel):
     def __init__(
-            self,
-            model_path: str,
-            model_name: str = "",
-            model_description: str = "",
-            threshold: float = 0.1,
-            area_threshold: float = 0.6,
-            **kwargs,
+        self,
+        model_path: str,
+        model_name: str = "",
+        model_description: str = "",
+        threshold: float = 0.1,
+        area_threshold: float = 0.6,
+        **kwargs,
     ):
         super().__init__(model_path, model_name, model_description, **kwargs)
         self.face_processor = FaceProcessor(threshold)
@@ -46,9 +45,9 @@ class InferenceModel(BaseModel):
                     continue
 
                 cropped_face = img[
-                               int(face_bbox.y1): int(face_bbox.y2),
-                               int(face_bbox.x1): int(face_bbox.x2),
-                               ]
+                    int(face_bbox.y1) : int(face_bbox.y2),
+                    int(face_bbox.x1) : int(face_bbox.x2),
+                ]
                 height, width, _ = cropped_face.shape
                 if self.input_height / self.input_width < height / width:
                     scale = self.input_height / height
@@ -81,7 +80,8 @@ class InferenceModel(BaseModel):
             image_predictions = []
             for face_bbox, result_emotion_prob in zip(face_bboxes, result):
                 emotions_probs_list = result_emotion_prob.getLayerFp16(
-                    result_emotion_prob.getAllLayerNames()[0])
+                    result_emotion_prob.getAllLayerNames()[0],
+                )
                 emotions_index = np.argsort(emotions_probs_list)
                 image_predictions.append(
                     EmotionLabel(
@@ -139,8 +139,12 @@ class InferenceModel(BaseModel):
 
         self.face_detector_in = self.oak_device.getInputQueue("face_detector_in")
         self.face_detector_out = self.oak_device.getOutputQueue("face_detector_out")
-        self.emotion_recognition_in = self.oak_device.getInputQueue("emotion_recognition_in")
-        self.emotion_recognition_out = self.oak_device.getOutputQueue("emotion_recognition_out")
+        self.emotion_recognition_in = self.oak_device.getInputQueue(
+            "emotion_recognition_in",
+        )
+        self.emotion_recognition_out = self.oak_device.getOutputQueue(
+            "emotion_recognition_out",
+        )
 
     def forward(self, data):
         results = []
@@ -190,8 +194,12 @@ class InferenceModel(BaseModel):
         cam_queue = self.oak_device.getOutputQueue("cam_out", 1, True)
         self.face_detector_in = self.oak_device.getInputQueue("face_detector_in")
         self.face_detector_out = self.oak_device.getOutputQueue("face_detector_out")
-        self.emotion_recognition_in = self.oak_device.getInputQueue("emotion_recognition_in")
-        self.emotion_recognition_out = self.oak_device.getOutputQueue("emotion_recognition_out")
+        self.emotion_recognition_in = self.oak_device.getInputQueue(
+            "emotion_recognition_in",
+        )
+        self.emotion_recognition_out = self.oak_device.getOutputQueue(
+            "emotion_recognition_out",
+        )
 
         return cam_queue
 

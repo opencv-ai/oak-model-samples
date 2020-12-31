@@ -1,9 +1,10 @@
 import os
 
-from PIL import Image
-from hand_detection import InferenceModel
 from modelplace_api import Device
 from modelplace_api.visualization import draw_pose_estimation_result
+from PIL import Image
+
+from hand_detection import InferenceModel
 
 # dir_name = os.path.abspath(os.path.dirname(__file__))
 # model_path = os.path.join(os.path.dirname(dir_name), "checkpoint")

@@ -1,15 +1,14 @@
 import json
 import math
 import os
+from datetime import datetime, timedelta
 
 import cv2
+import depthai as dai
 import numpy as np
 from modelplace_api import BaseModel, Point, TextPolygon
 
 from .postprocessing import PriorUtil
-
-from datetime import datetime, timedelta
-import depthai as dai
 
 
 def wait_for_results(queue):
@@ -79,13 +78,27 @@ class InferenceModel(BaseModel):
             h, w = self.input_height, self.input_width
             original_h = int((h - (pads[0] + pads[2])) / scale)
             original_w = int((w - (pads[1] + pads[3])) / scale)
-            result = np.concatenate([np.array(result.getLayerFp16(result.getAllLayerNames()[3])).reshape(-1, 5),
-                                     np.array(result.getLayerFp16(result.getAllLayerNames()[2])).reshape(-1, 8),
-                                     np.array(result.getLayerFp16(result.getAllLayerNames()[1])).reshape(-1, 4),
-                                     np.array(result.getLayerFp16(result.getAllLayerNames()[0])).reshape(-1, 2)], axis=-1)
+            result = np.concatenate(
+                [
+                    np.array(result.getLayerFp16(result.getAllLayerNames()[3])).reshape(
+                        -1, 5,
+                    ),
+                    np.array(result.getLayerFp16(result.getAllLayerNames()[2])).reshape(
+                        -1, 8,
+                    ),
+                    np.array(result.getLayerFp16(result.getAllLayerNames()[1])).reshape(
+                        -1, 4,
+                    ),
+                    np.array(result.getLayerFp16(result.getAllLayerNames()[0])).reshape(
+                        -1, 2,
+                    ),
+                ],
+                axis=-1,
+            )
 
-            quads = self.postprocessor.decode_results(result, self.threshold)\
-                .reshape(-1, 4, 2)
+            quads = self.postprocessor.decode_results(result, self.threshold).reshape(
+                -1, 4, 2,
+            )
             quads[:, :, 0] = np.clip(
                 (quads[:, :, 0] * w - pads[1]) / scale, 0, original_w,
             )

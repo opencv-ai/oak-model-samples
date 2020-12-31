@@ -1,11 +1,11 @@
 import math
 import os
+from datetime import datetime, timedelta
 
 import cv2
+import depthai as dai
 import numpy as np
 from modelplace_api import BaseModel, Point, TextPolygon
-import depthai as dai
-from datetime import datetime, timedelta
 
 from .postprocessing import decode_predictions, non_max_suppression, rotated_rectangle
 
@@ -33,12 +33,12 @@ def pad_img(img, pad_value, target_dims):
 
 class InferenceModel(BaseModel):
     def __init__(
-            self,
-            model_path: str,
-            model_name: str = "",
-            model_description: str = "",
-            threshold: float = 0.5,
-            **kwargs,
+        self,
+        model_path: str,
+        model_name: str = "",
+        model_description: str = "",
+        threshold: float = 0.5,
+        **kwargs,
     ):
         super().__init__(model_path, model_name, model_description, **kwargs)
         self.threshold = threshold
@@ -66,9 +66,15 @@ class InferenceModel(BaseModel):
         postprocessed_result = []
 
         for result, input_info in zip(predictions[0], predictions[1]):
-            scores = np.array(result.getLayerFp16(result.getAllLayerNames()[0])).reshape((1, 1, 80, 80))
-            geometry1 = np.array(result.getLayerFp16(result.getAllLayerNames()[1])).reshape((1, 4, 80, 80))
-            geometry2 = np.array(result.getLayerFp16(result.getAllLayerNames()[2])).reshape((1, 1, 80, 80))
+            scores = np.array(
+                result.getLayerFp16(result.getAllLayerNames()[0]),
+            ).reshape((1, 1, 80, 80))
+            geometry1 = np.array(
+                result.getLayerFp16(result.getAllLayerNames()[1]),
+            ).reshape((1, 4, 80, 80))
+            geometry2 = np.array(
+                result.getLayerFp16(result.getAllLayerNames()[2]),
+            ).reshape((1, 1, 80, 80))
             boxes, confidences, angles = decode_predictions(
                 scores, geometry1, geometry2, self.threshold,
             )

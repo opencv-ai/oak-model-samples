@@ -40,6 +40,13 @@ def parse_args():
         type=str,
         metavar=("WIDTHxHEIGHT"),
     )
+    parser.add_argument(
+        "--threshold",
+        "-tr",
+        help="Threshold for model predictions",
+        default=0.1,
+        type=float,
+    )
     return parser.parse_args()
 
 
@@ -47,7 +54,7 @@ def inference():
     args = parse_args()
     dir_name = os.path.abspath(os.path.dirname(__file__))
     model_path = os.path.join(dir_name, "checkpoint")
-    model = InferenceModel(model_path=model_path)
+    model = InferenceModel(model_path=model_path, threshold=args.threshold)
     model.model_load()
     inference_results = []
     if args.video:

@@ -5,8 +5,7 @@ from datetime import datetime, timedelta
 import cv2
 import depthai as dai
 import numpy as np
-from modelplace_api import BaseModel
-from modelplace_api import Pose, Link, Joint
+from modelplace_api import BaseModel, Joint, Link, Pose
 
 
 def wait_for_results(queue):
@@ -36,47 +35,83 @@ def pad_img(img, pad_value, target_dims):
 
 
 class InferenceModel(BaseModel):
-    kpt_names = ['Wrist',
-                 'TMCP', 'IMCP', 'MMCP', 'RMCP',
-                 'PMCP', 'TPIP', 'TDIP', 'TTIP',
-                 'IPIP', 'IDIP', 'ITIP', 'MPIP',
-                 'MDIP', 'MTIP', 'RPIP', 'RDIP',
-                 'RTIP', 'PPIP', 'PDIP', 'PTIP']
+    kpt_names = [
+        "Wrist",
+        "TMCP",
+        "IMCP",
+        "MMCP",
+        "RMCP",
+        "PMCP",
+        "TPIP",
+        "TDIP",
+        "TTIP",
+        "IPIP",
+        "IDIP",
+        "ITIP",
+        "MPIP",
+        "MDIP",
+        "MTIP",
+        "RPIP",
+        "RDIP",
+        "RTIP",
+        "PPIP",
+        "PDIP",
+        "PTIP",
+    ]
     model_part_idx = {b: a for a, b in enumerate(kpt_names)}
-    coco_part_labels = ['Wrist', 'TMCP', 'IMCP', 'MMCP', 'RMCP', 'PMCP', 'TPIP',
-                        'TDIP',
-                        'TTIP', 'IPIP', 'IDIP', 'ITIP', 'MPIP', 'MDIP', 'MTIP', 'RPIP',
-                        'RDIP', 'RTIP', 'PPIP', 'PDIP', 'PTIP']
+    coco_part_labels = [
+        "Wrist",
+        "TMCP",
+        "IMCP",
+        "MMCP",
+        "RMCP",
+        "PMCP",
+        "TPIP",
+        "TDIP",
+        "TTIP",
+        "IPIP",
+        "IDIP",
+        "ITIP",
+        "MPIP",
+        "MDIP",
+        "MTIP",
+        "RPIP",
+        "RDIP",
+        "RTIP",
+        "PPIP",
+        "PDIP",
+        "PTIP",
+    ]
     coco_part_idx = {b: a for a, b in enumerate(coco_part_labels)}
     coco_part_orders = [
-        ('Wrist', 'TMCP'),
-        ('TMCP', 'IMCP'),
-        ('IMCP', 'MMCP'),
-        ('MMCP', 'RMCP'),
-        ('Wrist', 'PMCP'),
-        ('PMCP', 'TPIP'),
-        ('TPIP', 'TDIP'),
-        ('TDIP', 'TTIP'),
-        ('Wrist', 'IPIP'),
-        ('IPIP', 'IDIP'),
-        ('IDIP', 'ITIP'),
-        ('ITIP', 'MPIP'),
-        ('Wrist', 'MDIP'),
-        ('MDIP', 'MTIP'),
-        ('MTIP', 'RPIP'),
-        ('RPIP', 'RDIP'),
-        ('Wrist', 'RTIP'),
-        ('RTIP', 'PPIP'),
-        ('PPIP', 'PDIP'),
-        ('PDIP', 'PTIP'),
+        ("Wrist", "TMCP"),
+        ("TMCP", "IMCP"),
+        ("IMCP", "MMCP"),
+        ("MMCP", "RMCP"),
+        ("Wrist", "PMCP"),
+        ("PMCP", "TPIP"),
+        ("TPIP", "TDIP"),
+        ("TDIP", "TTIP"),
+        ("Wrist", "IPIP"),
+        ("IPIP", "IDIP"),
+        ("IDIP", "ITIP"),
+        ("ITIP", "MPIP"),
+        ("Wrist", "MDIP"),
+        ("MDIP", "MTIP"),
+        ("MTIP", "RPIP"),
+        ("RPIP", "RDIP"),
+        ("Wrist", "RTIP"),
+        ("RTIP", "PPIP"),
+        ("PPIP", "PDIP"),
+        ("PDIP", "PTIP"),
     ]
 
     def __init__(
-            self,
-            model_path: str,
-            model_name: str = "",
-            model_description: str = "",
-            **kwargs,
+        self,
+        model_path: str,
+        model_name: str = "",
+        model_description: str = "",
+        **kwargs,
     ):
         super().__init__(model_path, model_name, model_description, **kwargs)
         self.input_height, self.input_width = 256, 256
@@ -113,17 +148,18 @@ class InferenceModel(BaseModel):
             #     -1, 3,
             # )
 
-            points = np.array(result.getLayerFp16(
-                'ld_21_2d')).reshape(
-                -1, 2,
-            )
+            points = np.array(result.getLayerFp16("ld_21_2d")).reshape(-1, 2)
             points[:, 0] = (points[:, 0] - pad[1]) / scale
             points[:, 1] = (points[:, 1] - pad[0]) / scale
-            postprocessed_result.append([Pose(
-                score=1.0,
-                links=self.create_links(points, self.model_part_idx),
-                skeleton_parts=self.coco_part_labels,
-            )])
+            postprocessed_result.append(
+                [
+                    Pose(
+                        score=1.0,
+                        links=self.create_links(points, self.model_part_idx),
+                        skeleton_parts=self.coco_part_labels,
+                    ),
+                ],
+            )
         return postprocessed_result
 
     def create_links(self, skeleton, class_map):

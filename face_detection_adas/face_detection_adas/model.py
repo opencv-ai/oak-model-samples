@@ -3,9 +3,9 @@ import os
 from datetime import datetime, timedelta
 
 import cv2
+import depthai as dai
 import numpy as np
 from modelplace_api import BaseModel, BBox
-import depthai as dai
 
 
 def pad_img(img, pad_value, target_dims):
@@ -49,7 +49,7 @@ class InferenceModel(BaseModel):
             0: "background",
             1: "person",
         }
-        self.input_width, self.input_height = 384, 672
+        self.input_width, self.input_height = 672, 384
 
     def preprocess(self, data):
         preprocessed_data = []
@@ -82,7 +82,9 @@ class InferenceModel(BaseModel):
         for result, input_info in zip(predictions[0], predictions[1]):
             scale, pads = input_info
             h, w = self.input_height, self.input_width
-            boxes = np.array(result.getLayerFp16(result.getAllLayerNames()[0])).reshape(-1, 7,)
+            boxes = np.array(result.getLayerFp16(result.getAllLayerNames()[0])).reshape(
+                -1, 7,
+            )
             image_predictions = []
             for box in boxes:
                 if box[2] > self.threshold:  # confidence > 0.1

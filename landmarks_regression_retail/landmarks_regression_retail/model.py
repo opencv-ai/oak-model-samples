@@ -1,12 +1,9 @@
 import os
 
 import cv2
-import numpy as np
-from modelplace_api import BaseModel, FacialLandmarks, Point, TaskType
 import depthai as dai
 import numpy as np
-from modelplace_api import BaseModel
-from modelplace_api import FacialLandmarks, Point
+from modelplace_api import BaseModel, FacialLandmarks, Point, TaskType
 
 from .face_processing import FaceProcessor, pad_img, wait_for_results
 
@@ -167,9 +164,11 @@ class InferenceModel(BaseModel):
         self.face_detector_in = self.oak_device.getInputQueue("face_detector_in")
         self.face_detector_out = self.oak_device.getOutputQueue("face_detector_out")
         self.landmark_detector_in = self.oak_device.getInputQueue(
-            "landmark_detector_in")
+            "landmark_detector_in",
+        )
         self.landmark_detector_out = self.oak_device.getOutputQueue(
-            "landmark_detector_out")
+            "landmark_detector_out",
+        )
 
     def forward(self, data):
         results = []
@@ -187,7 +186,7 @@ class InferenceModel(BaseModel):
 
     def process_sample(self, image):
         data = self.preprocess([image])
-        if data is None:
+        if not len(data[0]):
             return []
         output = self.forward(data)
         results = self.postprocess(output)
@@ -220,9 +219,11 @@ class InferenceModel(BaseModel):
         self.face_detector_in = self.oak_device.getInputQueue("face_detector_in")
         self.face_detector_out = self.oak_device.getOutputQueue("face_detector_out")
         self.landmark_detector_in = self.oak_device.getInputQueue(
-            "landmark_detector_in")
+            "landmark_detector_in",
+        )
         self.landmark_detector_out = self.oak_device.getOutputQueue(
-            "landmark_detector_out")
+            "landmark_detector_out",
+        )
 
         return cam_queue
 

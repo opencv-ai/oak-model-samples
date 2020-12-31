@@ -4,17 +4,16 @@ import os
 import pydantic
 from modelplace_api import Device
 from modelplace_api.utils import is_equal
-
-from facial_landmarks_35_adas import InferenceModel
 from PIL import Image
 
+from facial_landmarks_35_adas import InferenceModel
 
 dir_name = os.path.abspath(os.path.dirname(__file__))
 model_path = os.path.join(os.path.dirname(dir_name), "checkpoint")
 test_image_path = os.path.join(dir_name, "facial_landmarks_35_adas.jpg")
 test_result_path = os.path.join(dir_name, "facial_landmarks_35_adas_gt.json")
 
-test_image = Image.open(test_image_path).convert('RGB')
+test_image = Image.open(test_image_path).convert("RGB")
 with open(test_result_path, "r") as j_file:
     test_result = json.loads(j_file.read())
 

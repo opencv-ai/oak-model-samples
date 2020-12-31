@@ -17,6 +17,7 @@ The original model could be found in Intel Open Model Zoo, and the model card is
 
 ```
 usage: inference.py [-h] [-cam] [-vid VIDEO] [-vis] [-cs WIDTHxHEIGHT]
+                    [--threshold THRESHOLD]
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -31,7 +32,8 @@ optional arguments:
                         Frame shapes to capture with DepthAI RGB camera in WxH
                         format. The preview window will have the same shapes
                         (excluding legend).
-
+  --threshold THRESHOLD, -tr THRESHOLD
+                        Threshold for model predictions
 ```
 
 To use with a video file, run the script with the following arguments

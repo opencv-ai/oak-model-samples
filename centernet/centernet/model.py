@@ -1,12 +1,12 @@
 # flake8: noqa
 import os
+from datetime import datetime, timedelta
 
 import cv2
+import depthai as dai
 import numpy as np
 from modelplace_api import BaseModel, BBox
 from numpy.lib.stride_tricks import as_strided
-import depthai as dai
-from datetime import datetime, timedelta
 
 
 def wait_for_results(queue):
@@ -103,6 +103,7 @@ class InferenceModel(BaseModel):
     }
     list_classes = list(orig_coco_label_map.values())[1:]
     class_names = dict(zip(list(range(len(list_classes))), list_classes))
+
     def __init__(
         self,
         model_path: str,
@@ -182,15 +183,11 @@ class InferenceModel(BaseModel):
         topk_ind = np.argpartition(topk_scores, -K)[-K:]
         topk_score = topk_scores[topk_ind]
         topk_clses = topk_ind / K
-        topk_inds = self._gather_feat(
-            topk_inds.reshape((-1, 1)), topk_ind,
-        ).reshape((K))
-        topk_ys = self._gather_feat(topk_ys.reshape((-1, 1)), topk_ind).reshape(
+        topk_inds = self._gather_feat(topk_inds.reshape((-1, 1)), topk_ind).reshape(
             (K),
         )
-        topk_xs = self._gather_feat(topk_xs.reshape((-1, 1)), topk_ind).reshape(
-            (K),
-        )
+        topk_ys = self._gather_feat(topk_ys.reshape((-1, 1)), topk_ind).reshape((K))
+        topk_xs = self._gather_feat(topk_xs.reshape((-1, 1)), topk_ind).reshape((K))
 
         return topk_score, topk_inds, topk_clses, topk_ys, topk_xs
 
