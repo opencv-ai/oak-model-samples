@@ -49,7 +49,7 @@ class InferenceModel(BaseModel):
             0: "background",
             1: "person",
         }
-        self.input_width, self.input_height = 384, 672
+        self.input_width, self.input_height = 672, 384
 
     def preprocess(self, data):
         preprocessed_data = []
