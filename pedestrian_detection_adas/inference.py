@@ -6,7 +6,7 @@ import cv2
 import pydantic
 from modelplace_api.visualization import draw_detection_result
 
-from face_detection_retail import InferenceModel
+from pedestrian_detection_adas import InferenceModel
 
 
 def parse_args():
@@ -83,13 +83,14 @@ def inference():
             ret = model.process_sample(image)
             inference_results.append(ret)
             if args.visualization:
-                vis_result = draw_detection_result(image, ret)
-                cv2.imshow("Visualization", vis_result[-1])
+                vis_result = draw_detection_result(image, ret)[-1]
+                cv2.imshow("Visualization", vis_result)
                 if cv2.waitKey(1) == ord("q"):
                     cv2.destroyAllWindows()
                     break
             else:
                 raise RuntimeError("Camera inference should be used with -vis option")
+
     with open(
         os.path.join(os.path.dirname(__file__), "inference_results.json"), "w",
     ) as fp:

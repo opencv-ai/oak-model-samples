@@ -18,21 +18,15 @@ def wait_for_results(queue):
 
 def pad_img(img, pad_value, target_dims):
     h, w, _ = img.shape
-    pads = [
-        math.floor((target_dims[0] - h) // 2),
-        math.floor((target_dims[1] - w) // 2),
-    ]
+    pads = []
+    pads.append(int(math.floor((target_dims[0] - h) / 2.0)))
+    pads.append(int(math.floor((target_dims[1] - w) / 2.0)))
+    pads.append(int(target_dims[0] - h - pads[0]))
+    pads.append(int(target_dims[1] - w - pads[1]))
     padded_img = cv2.copyMakeBorder(
-        img,
-        pads[0],
-        int(target_dims[0] - h - pads[0]),
-        pads[1],
-        int(target_dims[1] - w - pads[1]),
-        cv2.BORDER_CONSTANT,
-        value=pad_value,
+        img, pads[0], pads[2], pads[1], pads[3], cv2.BORDER_CONSTANT, value=pad_value,
     )
     return padded_img, pads
-
 
 class InferenceModel(BaseModel):
     def __init__(
@@ -49,7 +43,7 @@ class InferenceModel(BaseModel):
             0: "background",
             1: "person",
         }
-        self.input_width, self.input_height = 384, 672
+        self.input_width, self.input_height = 672, 384
 
     def preprocess(self, data):
         preprocessed_data = []
@@ -70,8 +64,8 @@ class InferenceModel(BaseModel):
             )
 
             padded_img = padded_img.transpose((2, 0, 1))
-            padded_img = padded_img[np.newaxis].astype(np.float32)
-            preprocessed_data.append(padded_img)
+            planar_img = padded_img.flatten().astype(np.float32)
+            preprocessed_data.append(planar_img)
             data_infos.append((scale, pad))
 
         return [preprocessed_data, data_infos]
@@ -82,20 +76,33 @@ class InferenceModel(BaseModel):
         for result, input_info in zip(predictions[0], predictions[1]):
             scale, pads = input_info
             h, w = self.input_height, self.input_width
-            boxes = np.array(result.getLayerFp16(result.getAllLayerNames()[0])).reshape(-1, 7,)
+            original_h = int((h - (pads[0] + pads[2])) / scale)
+            original_w = int((w - (pads[1] + pads[3])) / scale)
+            boxes = np.array(result.getLayerFp16(result.getAllLayerNames()[0])).reshape(
+                -1, 7,
+            )
+            boxes = boxes[boxes[:, 2] > self.threshold]
             image_predictions = []
             for box in boxes:
-                if box[2] > self.threshold:
-                    image_predictions.append(
-                        BBox(
-                            x1=(float(box[3]) * w - pads[1]) / scale,
-                            y1=(float(box[4]) * h - pads[0]) / scale,
-                            x2=(float(box[5]) * w - pads[1]) / scale,
-                            y2=(float(box[6]) * h - pads[0]) / scale,
-                            score=float(box[2]),
-                            class_name=self.class_names[int(box[1])],
+                image_predictions.append(
+                    BBox(
+                        x1=float(
+                            np.clip((box[3] * w - pads[1]) / scale, 0, original_w),
                         ),
-                    )
+                        y1=float(
+                            np.clip((box[4] * h - pads[0]) / scale, 0, original_h),
+                        ),
+                        x2=float(
+                            np.clip((box[5] * w - pads[1]) / scale, 0, original_w),
+                        ),
+                        y2=float(
+                            np.clip((box[6] * h - pads[0]) / scale, 0, original_h),
+                        ),
+                        score=float(box[2]),
+                        class_name=self.class_names[int(box[1])],
+                    ),
+                )
+            postprocessed_result.append(image_predictions)
             postprocessed_result.append(image_predictions)
 
         return postprocessed_result
