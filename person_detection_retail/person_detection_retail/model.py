@@ -41,10 +41,10 @@ class InferenceModel(BaseModel):
     }
 
     def __init__(
-        self, model_path: str, confidence_threshold: float = 0.3,
+        self, model_path: str, threshold: float = 0.3,
     ):
         super(InferenceModel, self).__init__(model_path)
-        self.confidence_threshold = confidence_threshold
+        self.threshold = threshold
         self.input_height, self.input_width = 320, 544
 
     def preprocess(self, data):
@@ -83,7 +83,7 @@ class InferenceModel(BaseModel):
             )
             image_predictions = []
             for box in boxes:
-                if box[2] > self.confidence_threshold:
+                if box[2] > self.threshold:
                     image_predictions.append(
                         BBox(
                             x1=(float(box[3]) * w - pads[1]) / scale,
