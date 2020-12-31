@@ -42,7 +42,6 @@ class InferenceModel(BaseModel):
     ):
         super().__init__(model_path, model_name, model_description, **kwargs)
         self.threshold = threshold
-        self.mean = np.array([103.939, 116.779, 123.68], dtype="float32")
         self.input_height, self.input_width = 320, 320
 
     def preprocess(self, data):
@@ -56,7 +55,6 @@ class InferenceModel(BaseModel):
             data_info.append((w_scale, h_scale))
             scaled_img = cv2.resize(img, (self.input_height, self.input_width))
             scaled_img = scaled_img.astype(np.float32)
-            scaled_img -= self.mean
             scaled_img = scaled_img.transpose((2, 0, 1))
             scaled_img = scaled_img[np.newaxis]
             preprocessed_data.append(scaled_img)
