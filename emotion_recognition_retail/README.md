@@ -1,8 +1,8 @@
-## mobilenet-ssd
+## emotion-recognition-retail-0003
 
-This is an inference code to run a mobilenet-ssd model on DepthAI using Gen2 Pipeline Builder.
+This is an inference code to run a emotion-recognition-retail-0003 model on DepthAI using Gen2 Pipeline Builder.
 
-The original model could be found in Intel Open Model Zoo, and the model card is [there](https://github.com/openvinotoolkit/open_model_zoo/blob/efd238d02035f8a5417b7b1e25cd4c997d44351f/models/public/mobilenet-ssd/mobilenet-ssd.md).
+The original model could be found in Intel Open Model Zoo, and the model card is [there](https://docs.openvinotoolkit.org/2019_R1/_emotions_recognition_retail_0003_description_emotions_recognition_retail_0003.html).
 
 
 ## Demo
