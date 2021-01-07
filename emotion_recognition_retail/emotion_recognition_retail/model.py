@@ -166,6 +166,7 @@ class InferenceModel(BaseModel):
             return []
         output = self.forward(data)
         results = self.postprocess(output)
+        print(results)
         return results[0]
 
     def get_faces(self, data):
