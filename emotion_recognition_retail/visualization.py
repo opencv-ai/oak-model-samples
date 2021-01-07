@@ -21,7 +21,7 @@ def draw_emotion_recognition_result(
         # THis should be a function in modelplace_api visualization
         bg_color = RGB_COLORS[196]
         font_scale = 1
-        font = cv2.FONT_HERSHEY_COMPLEX
+        font = cv2.FONT_HERSHEY_TRIPLEX
         label_score, label_class_name = detection.emotion[0]
         (text_width, text_height) = cv2.getTextSize(label_class_name[1], font, fontScale=font_scale, thickness=1)[0]
         text_offset_x = detection.bbox.x1
