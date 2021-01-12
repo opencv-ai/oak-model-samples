@@ -18,7 +18,7 @@ def draw_age_gender_recognition_result(
             RGB_COLORS[196],
             thickness=8,
         )
-        # THis should be a function in modelplace_api visualization
+        # This should be a function in modelplace_api visualization
         bg_color = RGB_COLORS[196]
         font_scale = 1
         font = cv2.FONT_HERSHEY_TRIPLEX
