@@ -7,6 +7,7 @@ import cv2
 import depthai as dai
 import numpy as np
 from modelplace_api import BaseModel, Joint, Link, Pose
+
 from .utils import getKeypoints, getPersonwiseKeypoints, getValidPairs
 
 
@@ -100,12 +101,12 @@ class InferenceModel(BaseModel):
     ]
 
     def __init__(
-            self,
-            model_path: str,
-            model_name: str = "",
-            threshold: float = 0.1,
-            model_description: str = "",
-            **kwargs,
+        self,
+        model_path: str,
+        model_name: str = "",
+        threshold: float = 0.1,
+        model_description: str = "",
+        **kwargs,
     ):
         super().__init__(model_path, model_name, model_description, **kwargs)
         self.stride = 8
@@ -280,7 +281,7 @@ class InferenceModel(BaseModel):
         cam.setPreviewSize(preview_width, preview_height)
         cam.setResolution(dai.ColorCameraProperties.SensorResolution.THE_1080_P)
         cam.setInterleaved(False)
-        cam.setCamId(0)
+        cam.setBoardSocket(dai.CameraBoardSocket.RGB)
         cam_out = self.pipeline.createXLinkOut()
         cam_out.setStreamName("cam_out")
         cam.preview.link(cam_out.input)
@@ -290,7 +291,7 @@ class InferenceModel(BaseModel):
         self.oak_device = dai.Device(self.pipeline)
         self.oak_device.startPipeline()
 
-        cam_queue = self.oak_device.getOutputQueue("cam_out", 1, True)
+        cam_queue = self.oak_device.getOutputQueue("cam_out", maxSize=1, blocking=False)
         self.data_in = self.oak_device.getInputQueue("data_in")
         self.data_out = self.oak_device.getOutputQueue("data_out")
 

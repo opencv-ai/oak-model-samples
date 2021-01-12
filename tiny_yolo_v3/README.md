@@ -4,7 +4,6 @@ This is an inference code to run a tiny-yolo-v3 model on DepthAI using Gen2 Pipe
 
 The original model could be found in PINTO Model Zoo [there](https://github.com/PINTO0309/PINTO_model_zoo).
 
-
 ## Demo
 
 ![](demo.gif)

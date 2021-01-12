@@ -2,11 +2,10 @@ import json
 import os
 
 import pydantic
+from core.utils import is_equal
 from modelplace_api import Device
 from openvino_pose_estimation import InferenceModel
 from PIL import Image
-
-from core.utils import is_equal
 
 dir_name = os.path.abspath(os.path.dirname(__file__))
 model_path = os.path.join(

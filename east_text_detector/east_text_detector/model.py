@@ -148,7 +148,7 @@ class InferenceModel(BaseModel):
         cam.setPreviewSize(preview_width, preview_height)
         cam.setResolution(dai.ColorCameraProperties.SensorResolution.THE_1080_P)
         cam.setInterleaved(False)
-        cam.setCamId(0)
+        cam.setBoardSocket(dai.CameraBoardSocket.RGB)
         cam_out = self.pipeline.createXLinkOut()
         cam_out.setStreamName("cam_out")
         cam.preview.link(cam_out.input)
@@ -158,7 +158,7 @@ class InferenceModel(BaseModel):
         self.oak_device = dai.Device(self.pipeline)
         self.oak_device.startPipeline()
 
-        cam_queue = self.oak_device.getOutputQueue("cam_out", 1, True)
+        cam_queue = self.oak_device.getOutputQueue("cam_out", maxSize=1, blocking=False)
         self.data_in = self.oak_device.getInputQueue("data_in")
         self.data_out = self.oak_device.getOutputQueue("data_out")
 
