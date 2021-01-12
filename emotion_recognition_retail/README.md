@@ -4,7 +4,6 @@ This is an inference code to run a emotion-recognition-retail-0003 model on Dept
 
 The original model could be found in Intel Open Model Zoo, and the model card is [there](https://docs.openvinotoolkit.org/2019_R1/_emotions_recognition_retail_0003_description_emotions_recognition_retail_0003.html).
 
-
 ## Demo
 
 ![](demo.gif)

@@ -11,11 +11,11 @@ setup_kwargs = {
     "name": "pose_estimation",
     "version": "0.2.0",
     "description": "'Openpose', human pose estimation algorithm, have been implemented using Tensorflow. "
-                   "It also provides several variants that have some changes to the network structure "
-                   "for real-time processing on the CPU or low-power embedded devices."
-                   "The performace of Tensorflow Lite model was tuned significantly"
-                   "This implementation of OpenPose was done by "
-                   "[PINTO_model_zoo](https://github.com/PINTO0309/MobileNetV2-PoseEstimation) ",
+    "It also provides several variants that have some changes to the network structure "
+    "for real-time processing on the CPU or low-power embedded devices."
+    "The performace of Tensorflow Lite model was tuned significantly"
+    "This implementation of OpenPose was done by "
+    "[PINTO_model_zoo](https://github.com/PINTO0309/MobileNetV2-PoseEstimation) ",
     "long_description": None,
     "author": "",
     "author_email": "",

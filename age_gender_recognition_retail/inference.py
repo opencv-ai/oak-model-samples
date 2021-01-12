@@ -2,10 +2,12 @@ import json
 import os
 from argparse import ArgumentParser
 from os import path as osp
+
 import cv2
 import pydantic
-from visualization import draw_age_gender_recognition_result
 from modelplace_api.visualization import create_gif
+from visualization import draw_age_gender_recognition_result
+
 from age_gender_recognition_retail import InferenceModel
 
 
@@ -31,11 +33,8 @@ def parse_args():
         help="Visualize the results from the network (required for -cam)",
     )
     parser.add_argument(
-        "-gif",
-        "--gif",
-        action="store_true",
-        help="Create gif of result visualisation",
-    ) #DEBUG, WILL BE REMOVED
+        "-gif", "--gif", action="store_true", help="Create gif of result visualisation",
+    )  # DEBUG, WILL BE REMOVED
     parser.add_argument(
         "-cs",
         "--capture-size",
