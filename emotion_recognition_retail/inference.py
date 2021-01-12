@@ -4,9 +4,9 @@ from argparse import ArgumentParser
 from os import path as osp
 import cv2
 import pydantic
-from visualization import draw_age_gender_recognition_result
+from visualization import draw_emotion_recognition_result
 from modelplace_api.visualization import create_gif
-from age_gender_recognition_retail import InferenceModel
+from emotion_recognition_retail import InferenceModel
 
 
 def parse_args():
@@ -67,7 +67,7 @@ def inference():
             ret = model.process_sample(image)
             inference_results.append(ret)
             if args.visualization:
-                vis_result = draw_age_gender_recognition_result(image, ret)
+                vis_result = draw_emotion_recognition_result(image, ret)
                 # DEBUG, WILL BE REMOVED
                 if args.gif:
                     vis_results.append(vis_result[..., ::-1])
@@ -88,7 +88,7 @@ def inference():
             ret = model.process_sample(image)
             inference_results.append(ret)
             if args.visualization:
-                vis_result = draw_age_gender_recognition_result(image, ret)
+                vis_result = draw_emotion_recognition_result(image, ret)
                 # DEBUG, WILL BE REMOVED
                 if args.gif:
                     vis_results.append(vis_result[..., ::-1])

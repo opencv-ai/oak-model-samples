@@ -1,12 +1,12 @@
 import json
 import os
 from argparse import ArgumentParser
-from os import path as osp
+
 import cv2
 import pydantic
-from visualization import draw_age_gender_recognition_result
-from modelplace_api.visualization import create_gif
-from age_gender_recognition_retail import InferenceModel
+from modelplace_api.visualization import draw_pose_estimation_result
+
+from pose_estimation import InferenceModel
 
 
 def parse_args():
@@ -31,12 +31,6 @@ def parse_args():
         help="Visualize the results from the network (required for -cam)",
     )
     parser.add_argument(
-        "-gif",
-        "--gif",
-        action="store_true",
-        help="Create gif of result visualisation",
-    ) #DEBUG, WILL BE REMOVED
-    parser.add_argument(
         "-cs",
         "--capture-size",
         help="Frame shapes to capture with DepthAI RGB camera in WxH format."
@@ -46,6 +40,13 @@ def parse_args():
         type=str,
         metavar=("WIDTHxHEIGHT"),
     )
+    parser.add_argument(
+        "--threshold",
+        "-tr",
+        help="Threshold for model predictions",
+        default=0.1,
+        type=float,
+    )
     return parser.parse_args()
 
 
@@ -53,10 +54,9 @@ def inference():
     args = parse_args()
     dir_name = os.path.abspath(os.path.dirname(__file__))
     model_path = os.path.join(dir_name, "checkpoint")
-    model = InferenceModel(model_path=model_path)
+    model = InferenceModel(model_path=model_path, threshold=args.threshold)
     model.model_load()
     inference_results = []
-    vis_results = []
     if args.video:
         cap = cv2.VideoCapture(args.video)
         while cap.isOpened():
@@ -67,10 +67,7 @@ def inference():
             ret = model.process_sample(image)
             inference_results.append(ret)
             if args.visualization:
-                vis_result = draw_age_gender_recognition_result(image, ret)
-                # DEBUG, WILL BE REMOVED
-                if args.gif:
-                    vis_results.append(vis_result[..., ::-1])
+                vis_result = draw_pose_estimation_result(image, ret, args.threshold)[-1]
                 cv2.imshow("Visualization", vis_result)
                 if cv2.waitKey(1) == ord("q"):
                     cv2.destroyAllWindows()
@@ -88,17 +85,13 @@ def inference():
             ret = model.process_sample(image)
             inference_results.append(ret)
             if args.visualization:
-                vis_result = draw_age_gender_recognition_result(image, ret)
-                # DEBUG, WILL BE REMOVED
-                if args.gif:
-                    vis_results.append(vis_result[..., ::-1])
-                cv2.imshow("Visualization", vis_result)
+                vis_result = draw_pose_estimation_result(image, ret, args.threshold)
+                cv2.imshow("Visualization", vis_result[-1])
                 if cv2.waitKey(1) == ord("q"):
                     cv2.destroyAllWindows()
                     break
             else:
                 raise RuntimeError("Camera inference should be used with -vis option")
-
     with open(
         os.path.join(os.path.dirname(__file__), "inference_results.json"), "w",
     ) as fp:
@@ -111,10 +104,6 @@ def inference():
             indent=4,
             sort_keys=True,
         )
-    # DEBUG, WILL BE REMOVED
-    if args.gif:
-        save_path = args.video.replace(osp.splitext(args.video)[-1], ".gif")
-        create_gif(vis_results, save_path, fps=10)
 
 
 if __name__ == "__main__":

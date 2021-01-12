@@ -92,7 +92,6 @@ def inference():
                     break
             else:
                 raise RuntimeError("Camera inference should be used with -vis option")
-
     with open(
         os.path.join(os.path.dirname(__file__), "inference_results.json"), "w",
     ) as fp:
