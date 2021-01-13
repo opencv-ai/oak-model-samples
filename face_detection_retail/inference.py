@@ -44,7 +44,7 @@ def parse_args():
         "--threshold",
         "-tr",
         help="Threshold for model predictions",
-        default=0.1,
+        default=0.5,
         type=float,
     )
     return parser.parse_args()
@@ -85,8 +85,8 @@ def inference():
             ret = model.process_sample(image)
             inference_results.append(ret)
             if args.visualization:
-                vis_result = draw_detection_result(image, ret)
-                cv2.imshow("Visualization", vis_result[-1])
+                vis_result = draw_detection_result(image, ret)[-1]
+                cv2.imshow("Visualization", vis_result)
                 if cv2.waitKey(1) == ord("q"):
                     cv2.destroyAllWindows()
                     break
