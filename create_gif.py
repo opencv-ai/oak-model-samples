@@ -66,7 +66,7 @@ def main():
         type=str,
     )
     parser.add_argument(
-        "--threshold", "-tr", help="Threshold for model", default=0.6, type=float,
+        "--threshold", "-tr", help="Threshold for model", default=0.5, type=float,
     )
     args = parser.parse_args()
     class_definition = get_class(args.model + ".InferenceModel")
@@ -121,6 +121,11 @@ def main():
             "mapping_classes_to_points": mapping_classes_to_points,
             "confidence_threshold": args.threshold,
         }
+    elif args.model == "lightweight_openpose":
+        kwargs = {
+            "confidence_threshold": args.threshold,
+        }
+
     model.model_load()
     cap = cv2.VideoCapture(args.video)
     vis_results = []
