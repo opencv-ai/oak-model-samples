@@ -1,0 +1,12 @@
+---
+
+stages:
+  - test
+
+test_models:
+  stage: test
+  script:
+    ./test.sh
+  tags:
+    - oak
+  allow_failure: true
