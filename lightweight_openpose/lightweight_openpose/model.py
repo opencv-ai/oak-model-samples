@@ -77,7 +77,6 @@ class InferenceModel(BaseModel):
         "ank_l",
         "ank_r",
     ]
-    coco_part_idx = {b: a for a, b in enumerate(coco_part_labels)}
     coco_part_orders = [
         ("nose", "eye_l"),
         ("eye_l", "eye_r"),

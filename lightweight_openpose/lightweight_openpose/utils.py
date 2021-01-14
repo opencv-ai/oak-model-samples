@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
 
-mapIdx = [
+MAP_IDX = [
     [31, 32],
     [39, 40],
     [33, 34],
@@ -50,16 +50,7 @@ def getKeypoints(probMap, threshold=0.1):
     mapSmooth = cv2.GaussianBlur(probMap, (3, 3), 0, 0)
     mapMask = np.uint8(mapSmooth > threshold)
     keypoints = []
-    contours = None
-    try:
-        # OpenCV4.x
-        contours, _ = cv2.findContours(mapMask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-    except:
-        # OpenCV3.x
-        _, contours, _ = cv2.findContours(
-            mapMask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE,
-        )
-
+    contours, _ = cv2.findContours(mapMask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
     for cnt in contours:
         blobMask = np.zeros(mapMask.shape)
         blobMask = cv2.fillConvexPoly(blobMask, cnt, 1)
@@ -77,9 +68,9 @@ def getValidPairs(outputs, w, h, detected_keypoints):
     paf_score_th = 0.1
     conf_th = 0.7
 
-    for k in range(len(mapIdx)):
-        pafA = outputs[0, mapIdx[k][0], :, :]
-        pafB = outputs[0, mapIdx[k][1], :, :]
+    for k in range(len(MAP_IDX)):
+        pafA = outputs[0, MAP_IDX[k][0], :, :]
+        pafB = outputs[0, MAP_IDX[k][1], :, :]
         pafA = cv2.resize(pafA, (w, h))
         pafB = cv2.resize(pafB, (w, h))
 
@@ -146,7 +137,7 @@ def getValidPairs(outputs, w, h, detected_keypoints):
 def getPersonwiseKeypoints(valid_pairs, invalid_pairs, keypoints_list):
     personwiseKeypoints = -1 * np.ones((0, 19))
 
-    for k in range(len(mapIdx)):
+    for k in range(len(MAP_IDX)):
         if k not in invalid_pairs:
             partAs = valid_pairs[k][:, 0]
             partBs = valid_pairs[k][:, 1]

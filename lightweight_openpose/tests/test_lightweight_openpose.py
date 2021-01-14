@@ -10,8 +10,8 @@ from lightweight_openpose import InferenceModel
 
 dir_name = os.path.abspath(os.path.dirname(__file__))
 model_path = os.path.join(os.path.dirname(dir_name), "checkpoint")
-test_image_path = os.path.join(dir_name, "openvino_pose_estimation.jpg")
-test_result_path = os.path.join(dir_name, "openvino_pose_estimation_gt.json")
+test_image_path = os.path.join(dir_name, "pose_estimation.jpg")
+test_result_path = os.path.join(dir_name, "pose_estimation_gt.json")
 
 test_image = Image.open(test_image_path)
 with open(test_result_path, "r") as j_file:
