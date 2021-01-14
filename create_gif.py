@@ -121,6 +121,10 @@ def main():
             "mapping_classes_to_points": mapping_classes_to_points,
             "confidence_threshold": args.threshold,
         }
+    elif args.model == "openpose":
+        kwargs = {
+            "confidence_threshold": args.threshold,
+        }
     model.model_load()
     cap = cv2.VideoCapture(args.video)
     vis_results = []
