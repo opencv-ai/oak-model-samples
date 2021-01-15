@@ -108,9 +108,7 @@ class InferenceModel(BaseModel):
         **kwargs,
     ):
         super().__init__(model_path, model_name, model_description, **kwargs)
-        self.stride = 8
         self.threshold = threshold
-        self.upsample_ratio = 4
         self.num_keypoints = 18
         self.input_height, self.input_width = 368, 432
 

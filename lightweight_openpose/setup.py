@@ -26,7 +26,8 @@ setup_kwargs = {
     "package_data": package_data,
     "python_requires": ">=3.7,<4.0",
     "install_requires": [
-        "modelplace-api[vis]@git+https://github.com/opencv-ai/modelplace-api.git#egg=modelplace-api-0.2.0",
+        "modelplace-api[vis]@git+https://github.com/opencv-ai/modelplace-api.git@v0.3.0#egg=modelplace-api",
+        "depthai@git+https://github.com/luxonis/depthai-python@gen2_develop#depthai-0.2.0",
     ],
 }
 
