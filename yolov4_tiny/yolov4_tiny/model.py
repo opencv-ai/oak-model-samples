@@ -1,3 +1,4 @@
+import json
 import math
 import os
 from datetime import datetime, timedelta
@@ -45,32 +46,6 @@ class DetectionObject:
         self.ymax = ymax
         self.class_id = class_id
         self.confidence = confidence
-
-
-yolo_params = {
-    "detector/yolo-v4-tiny/Conv_17/BiasAdd/YoloRegion": {
-        "anchors": "10,14,23,27,37,58,81,82,135,169,344,319",
-        "axis": "1",
-        "classes": "80",
-        "coords": "4",
-        "do_softmax": "0",
-        "end_axis": "3",
-        "mask": "3,4,5",
-        "num": "6",
-        "originalLayersNames": "detector/yolo-v4-tiny/Conv_17/BiasAdd/YoloRegion",
-    },
-    "detector/yolo-v4-tiny/Conv_20/BiasAdd/YoloRegion": {
-        "anchors": "10,14,23,27,37,58,81,82,135,169,344,319",
-        "axis": "1",
-        "classes": "80",
-        "coords": "4",
-        "do_softmax": "0",
-        "end_axis": "3",
-        "mask": "1,2,3",
-        "num": "6",
-        "originalLayersNames": "detector/yolo-v4-tiny/Conv_20/BiasAdd/YoloRegion",
-    },
-}
 
 
 class YoloParams:
@@ -281,43 +256,16 @@ class InferenceModel(BaseModel):
             )
         return objects
 
-    def get_objects(
-        self,
-        output,
-        net,
-        new_frame_height_width,
-        source_height_width,
-        prob_threshold,
-        is_proportional,
-    ):
-        objects = list()
-
-        for layer_name, out_blob in output.items():
-            out_blob = out_blob.buffer.reshape(
-                net.layers[net.layers[layer_name].parents[0]].out_data[0].shape,
-            )
-            layer_params = YoloParams(net.layers[layer_name].params, out_blob.shape[2])
-            objects += self.parse_yolo_region(
-                out_blob,
-                new_frame_height_width,
-                source_height_width,
-                layer_params,
-                prob_threshold,
-                is_proportional,
-            )
-
-        return objects
-
     def filter_objects(self, objects, iou_threshold, prob_threshold):
-        objects = sorted(objects, key=lambda obj: obj["confidence"], reverse=True)
+        objects = sorted(objects, key=lambda obj: obj.confidence, reverse=True)
         for i in range(len(objects)):
-            if objects[i]["confidence"] == 0:
+            if objects[i].confidence == 0:
                 continue
             for j in range(i + 1, len(objects)):
                 if self.iou(objects[i], objects[j]) > iou_threshold:
-                    objects[j]["confidence"] = 0
+                    objects[j].confidence = 0
 
-        return tuple(obj for obj in objects if obj["confidence"] >= prob_threshold)
+        return tuple(obj for obj in objects if obj.confidence >= prob_threshold)
 
     def preprocess(self, data):
         preprocessed_data = []
@@ -367,7 +315,9 @@ class InferenceModel(BaseModel):
             for output_name, output_shape in zip(
                 result.getAllLayerNames(), output_shapes,
             ):
-                layer_params = YoloParams(yolo_params[output_name], output_shape[2])
+                layer_params = YoloParams(
+                    self.yolo_params[output_name], output_shape[2],
+                )
                 output = np.array(result.getLayerFp16(output_name)).reshape(
                     output_shape,
                 )
@@ -378,6 +328,7 @@ class InferenceModel(BaseModel):
                     layer_params,
                     self.threshold,
                 )
+            objects = self.filter_objects(objects, self.iou_threshold, self.threshold)
             boxes = []
             confidences = []
             class_ids = []
@@ -437,7 +388,9 @@ class InferenceModel(BaseModel):
     def model_load(self):
         model_blob = os.path.join(self.model_path, "model.blob")
         self.create_pipeline(model_blob)
-
+        params_file = os.path.join(os.path.dirname(__file__), "yolov4_params.json")
+        with open(params_file) as json_file:
+            self.yolo_params = json.load(json_file)
         self.oak_device = dai.Device(self.pipeline)
         self.oak_device.startPipeline()
         self.data_in = self.oak_device.getInputQueue("data_in")
