@@ -14,7 +14,7 @@ test_image_path = os.path.join(dir_name, "000000000139.jpg")
 test_result_path = os.path.join(dir_name, "000000000139_gt.json")
 
 
-test_image = Image.open(test_image_path)
+test_image = Image.open(test_image_path).convert("RGB")
 with open(test_result_path, "r") as j_file:
     test_result = json.loads(j_file.read())
 
