@@ -47,6 +47,13 @@ def parse_args():
         default=0.1,
         type=float,
     )
+    parser.add_argument(
+        "--visualization_threshold",
+        "-vis_tr",
+        help="Threshold for inference result visualization",
+        default=0.1,
+        type=float,
+    )
     return parser.parse_args()
 
 
@@ -67,7 +74,9 @@ def inference():
             ret = model.process_sample(image)
             inference_results.append(ret)
             if args.visualization:
-                vis_result = draw_pose_estimation_result(image, ret, args.threshold)[-1]
+                vis_result = draw_pose_estimation_result(
+                    image, ret, args.visualization_threshold,
+                )[-1]
                 cv2.imshow("Visualization", vis_result)
                 if cv2.waitKey(1) == ord("q"):
                     cv2.destroyAllWindows()
@@ -85,8 +94,10 @@ def inference():
             ret = model.process_sample(image)
             inference_results.append(ret)
             if args.visualization:
-                vis_result = draw_pose_estimation_result(image, ret, args.threshold)
-                cv2.imshow("Visualization", vis_result[-1])
+                vis_result = draw_pose_estimation_result(
+                    image, ret, args.visualization_threshold,
+                )[-1]
+                cv2.imshow("Visualization", vis_result)
                 if cv2.waitKey(1) == ord("q"):
                     cv2.destroyAllWindows()
                     break

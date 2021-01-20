@@ -66,7 +66,18 @@ def main():
         type=str,
     )
     parser.add_argument(
-        "--threshold", "-tr", help="Threshold for model", default=0.5, type=float,
+        "--threshold",
+        "-tr",
+        help="Threshold for model prediction",
+        default=0.5,
+        type=float,
+    )
+    parser.add_argument(
+        "--visualization_threshold",
+        "-vis_tr",
+        help="Threshold for inference result visualization",
+        default=0.5,
+        type=float,
     )
     args = parser.parse_args()
     class_definition = get_class(args.model + ".InferenceModel")
@@ -99,7 +110,7 @@ def main():
         kwargs = {
             "classes": classes,
             "mapping_classes_to_points": mapping_classes_to_points,
-            "confidence_threshold": args.threshold,
+            "confidence_threshold": args.visualization_threshold,
         }
     elif args.model == "landmarks_regression_retail" or args.model == "dbface":
         classes = [
@@ -119,11 +130,11 @@ def main():
         kwargs = {
             "classes": classes,
             "mapping_classes_to_points": mapping_classes_to_points,
-            "confidence_threshold": args.threshold,
+            "confidence_threshold": args.visualization_threshold,
         }
     elif args.model == "lightweight_openpose":
         kwargs = {
-            "confidence_threshold": args.threshold,
+            "confidence_threshold": args.visualization_threshold,
         }
 
     model.model_load()
