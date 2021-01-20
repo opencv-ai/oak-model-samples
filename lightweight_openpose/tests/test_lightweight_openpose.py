@@ -13,7 +13,7 @@ model_path = os.path.join(os.path.dirname(dir_name), "checkpoint")
 test_image_path = os.path.join(dir_name, "pose_estimation.jpg")
 test_result_path = os.path.join(dir_name, "pose_estimation_gt.json")
 
-test_image = Image.open(test_image_path)
+test_image = Image.open(test_image_path).convert("RGB")
 with open(test_result_path, "r") as j_file:
     test_result = json.loads(j_file.read())
 
