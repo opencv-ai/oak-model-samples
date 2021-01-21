@@ -5,6 +5,7 @@ from argparse import ArgumentParser
 import cv2
 import pydantic
 from modelplace_api.visualization import draw_pose_estimation_result
+from PIL import Image
 
 from openpose import InferenceModel
 
@@ -47,6 +48,13 @@ def parse_args():
         default=0.5,
         type=float,
     )
+    parser.add_argument(
+        "--visualization_threshold",
+        "-vis_tr",
+        help="Threshold for model predictions",
+        default=0.5,
+        type=float,
+    )
     return parser.parse_args()
 
 
@@ -64,10 +72,12 @@ def inference():
             if not read_correctly:
                 cv2.destroyAllWindows()
                 break
-            ret = model.process_sample(image)
+            ret = model.process_sample(Image.fromarray(image[..., ::-1]))
             inference_results.append(ret)
             if args.visualization:
-                vis_result = draw_pose_estimation_result(image, ret)[-1]
+                vis_result = draw_pose_estimation_result(
+                    image, ret, args.visualization_threshold,
+                )[-1]
                 cv2.imshow("Visualization", vis_result)
                 if cv2.waitKey(1) == ord("q"):
                     cv2.destroyAllWindows()
@@ -82,10 +92,12 @@ def inference():
                 .reshape((3, preview_height, preview_width))
                 .transpose(1, 2, 0)
             )
-            ret = model.process_sample(image)
+            ret = model.process_sample(Image.fromarray(image[..., ::-1]))
             inference_results.append(ret)
             if args.visualization:
-                vis_result = draw_pose_estimation_result(image, ret)[-1]
+                vis_result = draw_pose_estimation_result(
+                    image, ret, args.visualization_threshold,
+                )[-1]
                 cv2.imshow("Visualization", vis_result)
                 if cv2.waitKey(1) == ord("q"):
                     cv2.destroyAllWindows()
