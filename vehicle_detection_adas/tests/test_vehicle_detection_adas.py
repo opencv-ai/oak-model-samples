@@ -6,8 +6,8 @@ from modelplace_api import Device
 from modelplace_api.utils import is_equal
 from PIL import Image
 
-from vehicle_detection_adas import InferenceModel
 from test_utils import reset_ports
+from vehicle_detection_adas import InferenceModel
 
 dir_name = os.path.abspath(os.path.dirname(__file__))
 model_path = os.path.join(os.path.dirname(dir_name), "checkpoint")
