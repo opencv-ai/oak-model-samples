@@ -71,7 +71,7 @@ def inference():
             if not read_correctly:
                 cv2.destroyAllWindows()
                 break
-            ret = model.process_sample(image)
+            ret = model.process_sample(Image.fromarray(image[..., ::-1]))
             inference_results.append(ret)
             if args.visualization:
                 vis_result = draw_pose_estimation_result(
@@ -91,7 +91,7 @@ def inference():
                 .reshape((3, preview_height, preview_width))
                 .transpose(1, 2, 0)
             )
-            ret = model.process_sample(image)
+            ret = model.process_sample(Image.fromarray(image[..., ::-1]))
             inference_results.append(ret)
             if args.visualization:
                 vis_result = draw_pose_estimation_result(
