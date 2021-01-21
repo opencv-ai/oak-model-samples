@@ -5,6 +5,7 @@ from argparse import ArgumentParser
 import cv2
 import pydantic
 from modelplace_api.visualization import draw_detection_result
+from PIL import Image
 
 from yolov4_tiny import InferenceModel
 
@@ -57,7 +58,7 @@ def inference():
             if not read_correctly:
                 cv2.destroyAllWindows()
                 break
-            ret = model.process_sample(image)
+            ret = model.process_sample(Image.fromarray(image[..., ::-1]))
             inference_results.append(ret)
             if args.visualization:
                 vis_result = draw_detection_result(image, ret)[-1]
@@ -75,7 +76,7 @@ def inference():
                 .reshape((3, preview_height, preview_width))
                 .transpose(1, 2, 0)
             )
-            ret = model.process_sample(image)
+            ret = model.process_sample(Image.fromarray(image[..., ::-1]))
             inference_results.append(ret)
             if args.visualization:
                 vis_result = draw_detection_result(image, ret)
