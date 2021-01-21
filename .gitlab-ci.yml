@@ -1,12 +1,17 @@
----
-
 stages:
   - test
 
 test_models:
+  variables:
+    PYTHONPATH: $CI_PROJECT_DIR
   stage: test
+  before_script:
+    - cd $CI_PROJECT_DIR
+    - ./ci/install_packages.sh
   script:
-    ./test.sh
+    - python3.7 -m pytest -s -vv
+  after_script:
+    - ./ci/uninstall_packages.sh
   tags:
     - oak
   allow_failure: true
