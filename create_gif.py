@@ -2,7 +2,7 @@ import importlib
 import inspect
 from argparse import ArgumentParser
 from os import path as osp
-
+from PIL import Image
 import cv2
 from modelplace_api.visualization import create_gif
 
@@ -129,7 +129,7 @@ def main():
         if not read_correctly:
             cv2.destroyAllWindows()
             break
-        ret = model.process_sample(image)
+        ret = model.process_sample(Image.fromarray(image[..., ::-1]))
         vis_result = visualization(image, ret, **kwargs)[-1]
         cv2.imshow("Visualization", vis_result)
         vis_results.append(vis_result[..., ::-1])
