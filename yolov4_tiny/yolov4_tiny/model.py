@@ -36,14 +36,18 @@ class DetectionObject:
     ymin = 0
     xmax = 0
     ymax = 0
+    w = 0
+    h = 0
     class_id = 0
     confidence = 0.0
 
-    def __init__(self, xmin, ymin, xmax, ymax, class_id, confidence):
+    def __init__(self, xmin, ymin, xmax, ymax, width, hight, class_id, confidence):
         self.xmin = xmin
         self.ymin = ymin
         self.xmax = xmax
         self.ymax = ymax
+        self.w = width
+        self.h = hight
         self.class_id = class_id
         self.confidence = confidence
 
@@ -196,11 +200,15 @@ class InferenceModel(BaseModel):
         ymin = int((y - height / 2) * im_h)
         xmax = int(xmin + width * im_w)
         ymax = int(ymin + height * im_h)
+        width = int(width * im_w)
+        hight = int(height * im_h)
         return DetectionObject(
             xmin=xmin,
             xmax=xmax,
             ymin=ymin,
             ymax=ymax,
+            width=width,
+            hight=hight,
             class_id=class_id,
             confidence=confidence,
         )
@@ -256,16 +264,11 @@ class InferenceModel(BaseModel):
             )
         return objects
 
-    def filter_objects(self, objects, iou_threshold, prob_threshold):
-        objects = sorted(objects, key=lambda obj: obj.confidence, reverse=True)
-        for i in range(len(objects)):
-            if objects[i].confidence == 0:
-                continue
-            for j in range(i + 1, len(objects)):
-                if self.iou(objects[i], objects[j]) > iou_threshold:
-                    objects[j].confidence = 0
-
-        return tuple(obj for obj in objects if obj.confidence >= prob_threshold)
+    def nms(self, detections):
+        bboxes = [[box.xmin, box.ymin, box.w, box.h] for box in detections]
+        scores = [float(box.confidence) for box in detections]
+        indeces = cv2.dnn.NMSBoxes(bboxes, scores, self.threshold, self.iou_threshold)
+        return [detections[id[0]] for id in indeces]
 
     def preprocess(self, data):
         preprocessed_data = []
@@ -328,7 +331,7 @@ class InferenceModel(BaseModel):
                     layer_params,
                     self.threshold,
                 )
-            objects = self.filter_objects(objects, self.iou_threshold, self.threshold)
+            objects = self.nms(objects)
             boxes = []
             confidences = []
             class_ids = []
