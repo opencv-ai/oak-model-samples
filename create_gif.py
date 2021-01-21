@@ -2,9 +2,10 @@ import importlib
 import inspect
 from argparse import ArgumentParser
 from os import path as osp
-from PIL import Image
+
 import cv2
 from modelplace_api.visualization import create_gif
+from PIL import Image
 
 
 def get_class(class_str: str):
