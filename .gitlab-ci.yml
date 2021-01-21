@@ -1,0 +1,40 @@
+stages:
+  - lint
+  - test
+
+code_lint:
+  stage: lint
+  script:
+    - cd $CI_PROJECT_DIR
+    - python3.7 -V
+    - echo ${CI_COMMIT_SHA}
+    - SKIP=prettier pre-commit run -a
+  image: registry.gitlab.com/opencv-ai/model-benchmark/lint:py375
+  artifacts:
+    paths:
+      - "*"
+    exclude:
+      - .cache
+    expire_in: 1 day
+    when: on_failure
+  interruptible: true
+  except:
+    - main
+    - develop
+  tags:
+    - lint
+
+test_models:
+  variables:
+    PYTHONPATH: $CI_PROJECT_DIR
+  stage: test
+  before_script:
+    - cd $CI_PROJECT_DIR
+    - ./ci/install_packages.sh
+  script:
+    - python3.7 -m pytest -s -vv
+  after_script:
+    - ./ci/uninstall_packages.sh
+  tags:
+    - oak
+  allow_failure: true
