@@ -6,6 +6,7 @@ from modelplace_api import Device
 from modelplace_api.utils import is_equal
 from PIL import Image
 
+from test_utils import reset_ports
 from tiny_yolo_v3 import InferenceModel
 
 dir_name = os.path.abspath(os.path.dirname(__file__))
@@ -18,7 +19,7 @@ with open(test_result_path, "r") as j_file:
     test_result = json.loads(j_file.read())
 
 
-def test_process_sample_tiny_yolov3_retail():
+def test_process_sample_tiny_yolov3_retail(reset_ports):
     model = InferenceModel(model_path=model_path)
     model.model_load()
     model.to_device(Device.cpu)
