@@ -133,7 +133,7 @@ def main():
             "mapping_classes_to_points": mapping_classes_to_points,
             "confidence_threshold": args.visualization_threshold,
         }
-    elif args.model == "lightweight_openpose":
+    elif args.model == "lightweight_openpose" or args.model == "openpose":
         kwargs = {
             "confidence_threshold": args.visualization_threshold,
         }
