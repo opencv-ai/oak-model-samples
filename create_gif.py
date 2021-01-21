@@ -5,6 +5,7 @@ from os import path as osp
 
 import cv2
 from modelplace_api.visualization import create_gif
+from PIL import Image
 
 
 def get_class(class_str: str):
@@ -68,6 +69,13 @@ def main():
     parser.add_argument(
         "--threshold", "-tr", help="Threshold for model", default=0.6, type=float,
     )
+    parser.add_argument(
+        "--visualization_threshold",
+        "-vis_tr",
+        help="Threshold for model",
+        default=0.6,
+        type=float,
+    )
     args = parser.parse_args()
     class_definition = get_class(args.model + ".InferenceModel")
     visualization = get_class(args.vis_func)
@@ -121,6 +129,10 @@ def main():
             "mapping_classes_to_points": mapping_classes_to_points,
             "confidence_threshold": args.threshold,
         }
+    elif args.model == "openpose":
+        kwargs = {
+            "confidence_threshold": args.visualization_threshold,
+        }
     model.model_load()
     cap = cv2.VideoCapture(args.video)
     vis_results = []
@@ -129,7 +141,7 @@ def main():
         if not read_correctly:
             cv2.destroyAllWindows()
             break
-        ret = model.process_sample(image)
+        ret = model.process_sample(Image.fromarray(image[..., ::-1]))
         vis_result = visualization(image, ret, **kwargs)[-1]
         cv2.imshow("Visualization", vis_result)
         vis_results.append(vis_result[..., ::-1])
