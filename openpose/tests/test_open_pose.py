@@ -5,6 +5,7 @@ import pydantic
 from modelplace_api import Device
 from modelplace_api.utils import is_equal
 from PIL import Image
+from retry import retry
 
 from openpose import InferenceModel
 from test_utils import reset_ports
@@ -20,7 +21,9 @@ with open(test_result_path, "r") as j_file:
     test_result = json.loads(j_file.read())
 
 
-def test_process_sample_open_pose(reset_ports):
+@retry(RuntimeError, tries=3, delay=1)
+@reset_ports()
+def test_process_sample_open_pose():
     model = InferenceModel(model_path=model_path)
     model.model_load()
     model.to_device(Device.cpu)
