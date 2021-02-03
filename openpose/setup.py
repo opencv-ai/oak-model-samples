@@ -1,0 +1,44 @@
+# -*- coding: utf-8 -*-
+import os
+from shutil import copytree
+
+from setuptools import setup
+
+packages = ["openpose", "oak_inference_utils"]
+
+package_data = {
+    "": ["*"],
+}
+
+setup_kwargs = {
+    "name": "openpose",
+    "version": "0.2.0",
+    "description": "OpenPose is an industry standard in human body keypoint detection."
+    " Given an image of multiple people, the algorithm finds the "
+    "keypoints like nose, elbows and knees (17 in total) for everyone. "
+    "Then the model builds a skeleton-like representation for every "
+    "person on the image. The model was trained on large [MS COCO] "
+    "dataset, and because of this, it generalizes well to a multitude "
+    "of real-life usecases like surveillance, security, or sports.",
+    "long_description": None,
+    "author": "",
+    "author_email": "",
+    "maintainer": "Xperience.ai",
+    "maintainer_email": "hello@xperience.ai",
+    "url": None,
+    "packages": packages,
+    "package_data": package_data,
+    "python_requires": ">=3.7,<4.0",
+    "install_requires": [
+        "depthai==0.0.2.1+87247bfb645027a30c68191d88fe1b69b70e39ac",
+        "modelplace-api[vis]@https://github.com/opencv-ai/modelplace-api/archive/v0.4.0.zip",
+    ],
+}
+
+file_dir = os.path.dirname(os.path.abspath(__file__))
+root_dir = os.path.dirname(file_dir)
+dist_dir = os.path.join(file_dir, "oak_inference_utils")
+if not os.path.exists(dist_dir):
+    copytree(os.path.join(root_dir, "oak_inference_utils"), dist_dir)
+
+setup(**setup_kwargs)
