@@ -1,43 +1,13 @@
-import math
-import os
-from datetime import datetime, timedelta
-from operator import itemgetter
-
 import cv2
-import depthai as dai
 import numpy as np
-from modelplace_api import BaseModel, Joint, Link, Pose
+from modelplace_api import Joint, Link, Pose
 
-from .utils import getKeypoints, getPersonwiseKeypoints, getValidPairs
+from oak_inference_utils import DataInfo, OAKSingleStageModel, pad_img
 
-
-def wait_for_results(queue):
-    start = datetime.now()
-    while not queue.has():
-        if datetime.now() - start > timedelta(seconds=1):
-            return False
-    return True
+from .utils import get_keypoints, get_personwise_keypoints, get_valid_pairs
 
 
-def pad_img(img, pad_value, target_dims):
-    h, w, _ = img.shape
-    pads = [
-        math.floor((target_dims[0] - h) // 2),
-        math.floor((target_dims[1] - w) // 2),
-    ]
-    padded_img = cv2.copyMakeBorder(
-        img,
-        pads[0],
-        int(target_dims[0] - h - pads[0]),
-        pads[1],
-        int(target_dims[1] - w - pads[1]),
-        cv2.BORDER_CONSTANT,
-        value=pad_value,
-    )
-    return padded_img, pads
-
-
-class InferenceModel(BaseModel):
+class InferenceModel(OAKSingleStageModel):
     kpt_names = [
         "nose",
         "sho_r",
@@ -107,10 +77,16 @@ class InferenceModel(BaseModel):
         model_description: str = "",
         **kwargs,
     ):
-        super().__init__(model_path, model_name, model_description, **kwargs)
+        super().__init__(
+            model_path=model_path,
+            input_name="data",
+            input_shapes=(432, 368),
+            model_name=model_name,
+            model_description=model_description,
+            **kwargs,
+        )
         self.threshold = threshold
         self.num_keypoints = 18
-        self.input_height, self.input_width = 368, 432
 
     def preprocess(self, data):
         preprocessed_data = []
@@ -134,11 +110,19 @@ class InferenceModel(BaseModel):
             padded_img = padded_img[np.newaxis].astype(np.float32)
 
             preprocessed_data.append(padded_img)
-            data_infos.append((scale, pad))
+            data_infos.append(
+                DataInfo(
+                    scales=(scale, scale),
+                    pads=tuple(pad),
+                    original_width=width,
+                    original_height=height,
+                ),
+            )
 
         return [preprocessed_data, data_infos]
 
-    def rescale_keypoints(self, keypoints_list, pad, scale):
+    @staticmethod
+    def rescale_keypoints(keypoints_list, pad, scale):
         for keypoint in keypoints_list:
             keypoint[0] = int((keypoint[0] - pad[1]) / scale)
             keypoint[1] = int((keypoint[1] - pad[0]) / scale)
@@ -146,8 +130,8 @@ class InferenceModel(BaseModel):
 
     def postprocess(self, results):
         postprocessed_detections = []
-        for stages_output, img_data in zip(results[0], results[1]):
-            scale, pad = img_data
+        for stages_output, input_info in zip(results[0], results[1]):
+            scale, pads = input_info.scales[0], input_info.pads
             detected_keypoints = []
             keypoints_list = np.zeros((0, 3))
             keypoint_id = 0
@@ -155,9 +139,9 @@ class InferenceModel(BaseModel):
                 stages_output.getLayerFp16(stages_output.getAllLayerNames()[-1]),
             ).reshape((1, 57, 46, 54))
             for part in range(self.num_keypoints):
-                probMap = outputs[0, part, :, :]
-                probMap = cv2.resize(probMap, (self.input_width, self.input_height))
-                keypoints = getKeypoints(probMap, self.threshold)
+                prob_map = outputs[0, part, :, :]
+                prob_map = cv2.resize(prob_map, (self.input_width, self.input_height))
+                keypoints = get_keypoints(prob_map, self.threshold)
                 keypoints_with_id = []
 
                 for i in range(len(keypoints)):
@@ -166,25 +150,25 @@ class InferenceModel(BaseModel):
                     keypoint_id += 1
 
                 detected_keypoints.append(keypoints_with_id)
-            valid_pairs, invalid_pairs = getValidPairs(
+            valid_pairs, invalid_pairs = get_valid_pairs(
                 outputs, self.input_width, self.input_height, detected_keypoints,
             )
-            personwiseKeypoints = getPersonwiseKeypoints(
+            personwise_keypoints = get_personwise_keypoints(
                 valid_pairs, invalid_pairs, keypoints_list,
             )
             image_postproc_detections = []
-            keypoints_list = self.rescale_keypoints(keypoints_list, pad, scale)
-            for n in range(len(personwiseKeypoints)):
-                if len(personwiseKeypoints[n]) == 0:
+            keypoints_list = self.rescale_keypoints(keypoints_list, pads, scale)
+            for n in range(len(personwise_keypoints)):
+                if len(personwise_keypoints[n]) == 0:
                     continue
                 pose_keypoints = np.ones((self.num_keypoints, 2), dtype=np.int32) * -1
                 for kpt_id in range(self.num_keypoints):
-                    if personwiseKeypoints[n][kpt_id] != -1.0:
+                    if personwise_keypoints[n][kpt_id] != -1.0:
                         pose_keypoints[kpt_id, 0] = int(
-                            keypoints_list[int(personwiseKeypoints[n][kpt_id]), 0],
+                            keypoints_list[int(personwise_keypoints[n][kpt_id]), 0],
                         )
                         pose_keypoints[kpt_id, 1] = int(
-                            keypoints_list[int(personwiseKeypoints[n][kpt_id]), 1],
+                            keypoints_list[int(personwise_keypoints[n][kpt_id]), 1],
                         )
                 pose_keypoints = np.delete(pose_keypoints, (1), axis=0)
                 pose_keypoints = np.concatenate(
@@ -199,22 +183,13 @@ class InferenceModel(BaseModel):
                 )
                 links = self.create_links(pose_keypoints, self.model_part_idx)
                 pose = Pose(
-                    score=float(personwiseKeypoints[n][18]),
+                    score=float(personwise_keypoints[n][18]),
                     links=links,
                     skeleton_parts=self.coco_part_labels,
                 )
                 image_postproc_detections.append(pose)
             postprocessed_detections.append(image_postproc_detections)
         return postprocessed_detections
-
-    def to_device(self, device: str) -> None:
-        pass
-
-    def process_sample(self, image):
-        data = self.preprocess([image])
-        output = self.forward(data)
-        results = self.postprocess(output)
-        return results[0]
 
     def create_links(self, skeleton, class_map):
         links = []
@@ -237,59 +212,3 @@ class InferenceModel(BaseModel):
             )
             links.append(link)
         return links
-
-    def create_pipeline(self, model_blob):
-        self.pipeline = dai.Pipeline()
-
-        data_in = self.pipeline.createXLinkIn()
-        data_in.setStreamName("data_in")
-
-        model = self.pipeline.createNeuralNetwork()
-        model.setBlobPath(model_blob)
-        data_out = self.pipeline.createXLinkOut()
-        data_out.setStreamName("data_out")
-
-        data_in.out.link(model.input)
-        model.out.link(data_out.input)
-
-    def model_load(self):
-        model_blob = os.path.join(self.model_path, "model.blob")
-        self.create_pipeline(model_blob)
-
-        self.oak_device = dai.Device(self.pipeline)
-        self.oak_device.startPipeline()
-        self.data_in = self.oak_device.getInputQueue("data_in")
-        self.data_out = self.oak_device.getOutputQueue("data_out")
-        return self.pipeline
-
-    def forward(self, data):
-        results = []
-        for sample in data[0]:
-            nn_data = dai.NNData()
-            nn_data.setLayer("data", sample)
-            self.data_in.send(nn_data)
-            assert wait_for_results(self.data_out)
-            results.append(self.data_out.get())
-        data[0] = results
-        return data
-
-    def add_cam_to_pipeline(self, preview_width, preview_height):
-        cam = self.pipeline.createColorCamera()
-        cam.setPreviewSize(preview_width, preview_height)
-        cam.setResolution(dai.ColorCameraProperties.SensorResolution.THE_1080_P)
-        cam.setInterleaved(False)
-        cam.setBoardSocket(dai.CameraBoardSocket.RGB)
-        cam_out = self.pipeline.createXLinkOut()
-        cam_out.setStreamName("cam_out")
-        cam.preview.link(cam_out.input)
-
-        del self.oak_device
-
-        self.oak_device = dai.Device(self.pipeline)
-        self.oak_device.startPipeline()
-
-        cam_queue = self.oak_device.getOutputQueue("cam_out", maxSize=1, blocking=False)
-        self.data_in = self.oak_device.getInputQueue("data_in")
-        self.data_out = self.oak_device.getOutputQueue("data_out")
-
-        return cam_queue

@@ -1,7 +1,10 @@
 # -*- coding: utf-8 -*-
+import os
+from shutil import copytree
+
 from setuptools import setup
 
-packages = ["tiny_yolo_v3"]
+packages = ["tiny_yolo_v3", "oak_inference_utils"]
 
 package_data = {
     "": ["*"],
@@ -21,9 +24,15 @@ setup_kwargs = {
     "package_data": package_data,
     "python_requires": ">=3.7,<4.0",
     "install_requires": [
-        "modelplace-api@git+https://github.com/opencv-ai/modelplace-api.git#egg=modelplace-api-0.2.0",
+        "depthai==0.0.2.1+87247bfb645027a30c68191d88fe1b69b70e39ac",
+        "modelplace-api[vis]@https://github.com/opencv-ai/modelplace-api/archive/v0.4.0.zip",
     ],
 }
 
+file_dir = os.path.dirname(os.path.abspath(__file__))
+root_dir = os.path.dirname(file_dir)
+dist_dir = os.path.join(file_dir, "oak_inference_utils")
+if not os.path.exists(dist_dir):
+    copytree(os.path.join(root_dir, "oak_inference_utils"), dist_dir)
 
 setup(**setup_kwargs)

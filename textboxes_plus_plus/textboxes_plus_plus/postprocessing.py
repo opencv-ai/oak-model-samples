@@ -58,8 +58,8 @@ class PriorMap(object):
         image_size,
         map_size,
         minmax_size=None,
-        variances=[0.1, 0.1, 0.2, 0.2],
-        aspect_ratios=[1],
+        variances=(0.1, 0.1, 0.2, 0.2),
+        aspect_ratios=(1,),
         shift=None,
     ):
 

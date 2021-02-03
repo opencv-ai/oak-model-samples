@@ -1,14 +1,13 @@
-import os
-
 import cv2
-import depthai as dai
 import numpy as np
-from modelplace_api import BaseModel, EmotionLabel, Label
+from modelplace_api import EmotionLabel, Label
 
-from .face_processing import FaceProcessor, pad_img, wait_for_results
+from oak_inference_utils import OAKTwoStageModel, pad_img
+
+from .face_processing import FaceProcessor
 
 
-class InferenceModel(BaseModel):
+class InferenceModel(OAKTwoStageModel):
     def __init__(
         self,
         model_path: str,
@@ -18,18 +17,24 @@ class InferenceModel(BaseModel):
         area_threshold: float = 0.6,
         **kwargs,
     ):
-        super().__init__(model_path, model_name, model_description, **kwargs)
-        self.face_processor = FaceProcessor(threshold)
+        super().__init__(
+            model_path=model_path,
+            input_name="data",
+            first_stage=FaceProcessor(threshold),
+            model_name=model_name,
+            model_description=model_description,
+            **kwargs,
+        )
         self.area_threshold = area_threshold
         self.classes = ["neutral", "happy", "sad", "surprise", "anger"]
         self.input_height, self.input_width = 64, 64
 
     def preprocess(self, data):
-        face_bboxes = self.get_faces(data)
+        face_bboxes = self.get_first_stage_result(data)
         preprocessed_data = []
         preprocessed_bboxes = []
         if face_bboxes == [[]]:
-            return [preprocessed_bboxes, preprocessed_data]
+            return None
         for i, img in enumerate(data):
             areas = [
                 (bbox.y2 - bbox.y1) * (bbox.x2 - bbox.x1) for bbox in face_bboxes[i]
@@ -86,7 +91,7 @@ class InferenceModel(BaseModel):
                 image_predictions.append(
                     EmotionLabel(
                         bbox=face_bbox,
-                        emotion=[
+                        emotions=[
                             Label(
                                 score=emotions_probs_list[idx],
                                 class_name=self.classes[idx],
@@ -98,111 +103,3 @@ class InferenceModel(BaseModel):
             postprocessed_result.append(image_predictions)
 
         return postprocessed_result
-
-    def create_pipeline(self, model_blob):
-        self.pipeline = dai.Pipeline()
-
-        face_detector_in = self.pipeline.createXLinkIn()
-        face_detector_in.setStreamName("face_detector_in")
-
-        face_detector = self.pipeline.createNeuralNetwork()
-        face_detector.setBlobPath(model_blob["detector"])
-
-        face_detector_out = self.pipeline.createXLinkOut()
-        face_detector_out.setStreamName("face_detector_out")
-
-        emotion_recognition_in = self.pipeline.createXLinkIn()
-        emotion_recognition_in.setStreamName("emotion_recognition_in")
-
-        emotion_recognition_nn = self.pipeline.createNeuralNetwork()
-        emotion_recognition_nn.setBlobPath(model_blob["emotion_recognition"])
-
-        emotion_recognition_out = self.pipeline.createXLinkOut()
-        emotion_recognition_out.setStreamName("emotion_recognition_out")
-
-        face_detector_in.out.link(face_detector.input)
-        face_detector.out.link(face_detector_out.input)
-        emotion_recognition_in.out.link(emotion_recognition_nn.input)
-        emotion_recognition_nn.out.link(emotion_recognition_out.input)
-
-    def model_load(self):
-
-        model_blob = {
-            "detector": os.path.join(self.model_path, "stage_1.blob"),
-            "emotion_recognition": os.path.join(self.model_path, "stage_2.blob"),
-        }
-
-        self.create_pipeline(model_blob)
-
-        self.oak_device = dai.Device(self.pipeline)
-        self.oak_device.startPipeline()
-
-        self.face_detector_in = self.oak_device.getInputQueue("face_detector_in")
-        self.face_detector_out = self.oak_device.getOutputQueue("face_detector_out")
-        self.emotion_recognition_in = self.oak_device.getInputQueue(
-            "emotion_recognition_in",
-        )
-        self.emotion_recognition_out = self.oak_device.getOutputQueue(
-            "emotion_recognition_out",
-        )
-
-    def forward(self, data):
-        results = []
-        for sample in data[0]:
-            sample_results = []
-            for face in sample:
-                nn_data = dai.NNData()
-                nn_data.setLayer("data", face)
-                self.emotion_recognition_in.send(nn_data)
-                assert wait_for_results(self.emotion_recognition_out)
-                sample_results.append(self.emotion_recognition_out.get())
-            results.append(sample_results)
-        data[0] = results
-        return data
-
-    def process_sample(self, image):
-        data = self.preprocess([image])
-        if data is None:
-            return []
-        output = self.forward(data)
-        results = self.postprocess(output)
-        print(results)
-        return results[0]
-
-    def get_faces(self, data):
-        preprocessed_data = self.face_processor.preprocess(data)
-        face_output = self.face_processor.forward(
-            self.face_detector_in, self.face_detector_out, preprocessed_data,
-        )
-        face_bboxes = self.face_processor.postprocess(face_output)
-        return face_bboxes
-
-    def add_cam_to_pipeline(self, width, height):
-        cam = self.pipeline.createColorCamera()
-        cam.setPreviewSize(width, height)
-        cam.setResolution(dai.ColorCameraProperties.SensorResolution.THE_1080_P)
-        cam.setInterleaved(False)
-        cam.setBoardSocket(dai.CameraBoardSocket.RGB)
-        cam_out = self.pipeline.createXLinkOut()
-        cam_out.setStreamName("cam_out")
-        cam.preview.link(cam_out.input)
-
-        del self.oak_device
-
-        self.oak_device = dai.Device(self.pipeline)
-        self.oak_device.startPipeline()
-
-        cam_queue = self.oak_device.getOutputQueue("cam_out", maxSize=1, blocking=False)
-        self.face_detector_in = self.oak_device.getInputQueue("face_detector_in")
-        self.face_detector_out = self.oak_device.getOutputQueue("face_detector_out")
-        self.emotion_recognition_in = self.oak_device.getInputQueue(
-            "emotion_recognition_in",
-        )
-        self.emotion_recognition_out = self.oak_device.getOutputQueue(
-            "emotion_recognition_out",
-        )
-
-        return cam_queue
-
-    def to_device(self, _) -> None:
-        pass

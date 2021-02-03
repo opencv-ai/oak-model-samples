@@ -1,53 +1,22 @@
 import json
-import math
 import os
-from datetime import datetime, timedelta
-from math import exp as exp
+from math import exp
 
 import cv2
-import depthai as dai
 import numpy as np
-from modelplace_api import BaseModel, BBox
+from modelplace_api import BBox
 
-
-def wait_for_results(queue):
-    start = datetime.now()
-    while not queue.has():
-        if datetime.now() - start > timedelta(seconds=1):
-            return False
-    return True
-
-
-def pad_img(img, pad_value, target_dims):
-    h, w, _ = img.shape
-    pads = []
-    pads.append(int(math.floor((target_dims[0] - h) / 2.0)))
-    pads.append(int(math.floor((target_dims[1] - w) / 2.0)))
-    pads.append(int(target_dims[0] - h - pads[0]))
-    pads.append(int(target_dims[1] - w - pads[1]))
-    padded_img = cv2.copyMakeBorder(
-        img, pads[0], pads[2], pads[1], pads[3], cv2.BORDER_CONSTANT, value=pad_value,
-    )
-    return padded_img, pads
+from oak_inference_utils import DataInfo, OAKSingleStageModel
 
 
 class DetectionObject:
-    xmin = 0
-    ymin = 0
-    xmax = 0
-    ymax = 0
-    w = 0
-    h = 0
-    class_id = 0
-    confidence = 0.0
-
-    def __init__(self, xmin, ymin, xmax, ymax, width, hight, class_id, confidence):
-        self.xmin = xmin
-        self.ymin = ymin
-        self.xmax = xmax
-        self.ymax = ymax
-        self.w = width
-        self.h = hight
+    def __init__(self, x, y, h, w, class_id, confidence, im_h, im_w):
+        self.xmin = int((x - w / 2) * im_w)
+        self.ymin = int((y - h / 2) * im_h)
+        self.xmax = int(self.xmin + w * im_w)
+        self.ymax = int(self.ymin + h * im_h)
+        self.w = int(w * im_w)
+        self.h = int(h * im_h)
         self.class_id = class_id
         self.confidence = confidence
 
@@ -88,15 +57,15 @@ class YoloParams:
             mask = [int(idx) for idx in param["mask"].split(",")]
             self.num = len(mask)
 
-            maskedAnchors = []
+            masked_anchors = []
             for idx in mask:
-                maskedAnchors += [self.anchors[idx * 2], self.anchors[idx * 2 + 1]]
-            self.anchors = maskedAnchors
+                masked_anchors += [self.anchors[idx * 2], self.anchors[idx * 2 + 1]]
+            self.anchors = masked_anchors
 
             self.isYoloV3 = True
 
 
-class InferenceModel(BaseModel):
+class InferenceModel(OAKSingleStageModel):
     def __init__(
         self,
         model_path: str,
@@ -106,7 +75,14 @@ class InferenceModel(BaseModel):
         iou_threshold: float = 0.4,
         **kwargs,
     ):
-        super().__init__(model_path, model_name, model_description, **kwargs)
+        super().__init__(
+            model_path=model_path,
+            input_name="inputs",
+            input_shapes=(416, 416),
+            model_name=model_name,
+            model_description=model_description,
+            **kwargs,
+        )
         self.threshold = threshold
         self.iou_threshold = iou_threshold
         self.class_names = {
@@ -192,29 +168,10 @@ class InferenceModel(BaseModel):
             79: "hair drier",
             80: "toothbrush",
         }
-        self.input_height, self.input_width = 416, 416
 
     @staticmethod
-    def scale_bbox(x, y, height, width, class_id, confidence, im_h, im_w):
-        xmin = int((x - width / 2) * im_w)
-        ymin = int((y - height / 2) * im_h)
-        xmax = int(xmin + width * im_w)
-        ymax = int(ymin + height * im_h)
-        width = int(width * im_w)
-        hight = int(height * im_h)
-        return DetectionObject(
-            xmin=xmin,
-            xmax=xmax,
-            ymin=ymin,
-            ymax=ymax,
-            width=width,
-            hight=hight,
-            class_id=class_id,
-            confidence=confidence,
-        )
-
     def parse_yolo_region(
-        self, predictions, resized_image_shape, original_im_shape, params, threshold,
+        predictions, resized_image_shape, original_im_shape, params, threshold,
     ):
         _, _, out_blob_h, out_blob_w = predictions.shape
         assert out_blob_w == out_blob_h, (
@@ -251,15 +208,8 @@ class InferenceModel(BaseModel):
             if confidence < threshold:
                 continue
             objects.append(
-                self.scale_bbox(
-                    x=x,
-                    y=y,
-                    height=height,
-                    width=width,
-                    class_id=class_id,
-                    confidence=confidence,
-                    im_h=orig_im_h,
-                    im_w=orig_im_w,
+                DetectionObject(
+                    x, y, height, width, class_id, confidence, orig_im_h, orig_im_w,
                 ),
             )
         return objects
@@ -284,7 +234,14 @@ class InferenceModel(BaseModel):
             resized_image = resized_image.transpose((2, 0, 1))
             resized_image = resized_image[np.newaxis].astype(np.float32)
             preprocessed_data.append(resized_image)
-            data_infos.append((height, width))
+            data_infos.append(
+                DataInfo(
+                    scales=(0, 0),
+                    pads=(0, 0),
+                    original_width=width,
+                    original_height=height,
+                ),
+            )
 
         return [preprocessed_data, data_infos]
 
@@ -313,7 +270,10 @@ class InferenceModel(BaseModel):
         postprocessed_result = []
         for result, input_info in zip(predictions[0], predictions[1]):
             objects = []
-            original_h, original_w = input_info
+            original_h, original_w = (
+                input_info.original_height,
+                input_info.original_width,
+            )
             output_shapes = [(1, 255, 13, 13), (1, 255, 26, 26)]
             for output_name, output_shape in zip(
                 result.getAllLayerNames(), output_shapes,
@@ -354,10 +314,10 @@ class InferenceModel(BaseModel):
                 if conf > self.threshold:
                     image_predictions.append(
                         BBox(
-                            x1=float(np.clip(box[0], 0, original_w)),
-                            y1=float(np.clip(box[1], 0, original_h)),
-                            x2=float(np.clip(box[2], 0, original_w)),
-                            y2=float(np.clip(box[3], 0, original_h)),
+                            x1=int(np.clip(box[0], 0, original_w)),
+                            y1=int(np.clip(box[1], 0, original_h)),
+                            x2=int(np.clip(box[2], 0, original_w)),
+                            y2=int(np.clip(box[3], 0, original_h)),
                             score=float(conf),
                             class_name=self.class_names[class_id],
                         ),
@@ -365,69 +325,8 @@ class InferenceModel(BaseModel):
             postprocessed_result.append(image_predictions)
         return postprocessed_result
 
-    def to_device(self, device):
-        pass
-
-    def process_sample(self, image):
-        data = self.preprocess([image])
-        output = self.forward(data)
-        results = self.postprocess(output)
-        return results[0]
-
-    def create_pipeline(self, model_blob):
-        self.pipeline = dai.Pipeline()
-
-        data_in = self.pipeline.createXLinkIn()
-        data_in.setStreamName("data_in")
-
-        model = self.pipeline.createNeuralNetwork()
-        model.setBlobPath(model_blob)
-        data_out = self.pipeline.createXLinkOut()
-        data_out.setStreamName("data_out")
-
-        data_in.out.link(model.input)
-        model.out.link(data_out.input)
-
     def model_load(self):
-        model_blob = os.path.join(self.model_path, "model.blob")
-        self.create_pipeline(model_blob)
+        super().model_load()
         params_file = os.path.join(os.path.dirname(__file__), "yolov4_params.json")
         with open(params_file) as json_file:
             self.yolo_params = json.load(json_file)
-        self.oak_device = dai.Device(self.pipeline)
-        self.oak_device.startPipeline()
-        self.data_in = self.oak_device.getInputQueue("data_in")
-        self.data_out = self.oak_device.getOutputQueue("data_out")
-        return self.pipeline
-
-    def forward(self, data):
-        results = []
-        for sample in data[0]:
-            nn_data = dai.NNData()
-            nn_data.setLayer("inputs", sample)
-            self.data_in.send(nn_data)
-            assert wait_for_results(self.data_out)
-            results.append(self.data_out.get())
-        data[0] = results
-        return data
-
-    def add_cam_to_pipeline(self, preview_width, preview_height):
-        cam = self.pipeline.createColorCamera()
-        cam.setPreviewSize(preview_width, preview_height)
-        cam.setResolution(dai.ColorCameraProperties.SensorResolution.THE_1080_P)
-        cam.setInterleaved(False)
-        cam.setBoardSocket(dai.CameraBoardSocket.RGB)
-        cam_out = self.pipeline.createXLinkOut()
-        cam_out.setStreamName("cam_out")
-        cam.preview.link(cam_out.input)
-
-        del self.oak_device
-
-        self.oak_device = dai.Device(self.pipeline)
-        self.oak_device.startPipeline()
-
-        cam_queue = self.oak_device.getOutputQueue("cam_out", maxSize=1, blocking=False)
-        self.data_in = self.oak_device.getInputQueue("data_in")
-        self.data_out = self.oak_device.getOutputQueue("data_out")
-
-        return cam_queue
