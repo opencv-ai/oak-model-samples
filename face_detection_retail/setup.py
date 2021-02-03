@@ -1,18 +1,14 @@
 # -*- coding: utf-8 -*-
+import os
+from shutil import copytree
+
 from setuptools import setup
 
-packages = ["face_detection_retail"]
+packages = ["face_detection_retail", "oak_inference_utils"]
 
 package_data = {
     "": ["*"],
 }
-
-install_requires = [
-    "depthai==0.0.2.1+22ad34c8264fc3a9a919dbc5c01e3ed3eb41f5aa",
-    "opencv-python==4.2.0.34",
-    "numpy==1.16.4",
-    "model-api @ git+https://github.com/opencv-ai/model-api.git@ps/public-api#egg=model-api-0.2.0",
-]
 
 setup_kwargs = {
     "name": "face_detection_retail",
@@ -27,8 +23,16 @@ setup_kwargs = {
     "packages": packages,
     "package_data": package_data,
     "python_requires": ">=3.7,<4.0",
-    "install_requires": install_requires,
+    "install_requires": [
+        "depthai==0.0.2.1+87247bfb645027a30c68191d88fe1b69b70e39ac",
+        "modelplace-api[vis]@https://github.com/opencv-ai/modelplace-api/archive/v0.4.0.zip",
+    ],
 }
 
+file_dir = os.path.dirname(os.path.abspath(__file__))
+root_dir = os.path.dirname(file_dir)
+dist_dir = os.path.join(file_dir, "oak_inference_utils")
+if not os.path.exists(dist_dir):
+    copytree(os.path.join(root_dir, "oak_inference_utils"), dist_dir)
 
 setup(**setup_kwargs)

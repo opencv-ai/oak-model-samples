@@ -1,30 +1,14 @@
 import json
 import os
 
-import numpy as np
 import pydantic
-from model_benchmark_api import Device
+from modelplace_api import Device
+from modelplace_api.utils import is_equal
 from PIL import Image
+from retry import retry
 
 from face_detection_retail import InferenceModel
-
-
-def is_equal(result, gt, error=0.001) -> bool:
-    if type(result) != type(gt):
-        raise TypeError
-    ret = True
-    if isinstance(result, dict):
-        for key in result:
-            ret = ret and is_equal(result[key], gt[key], error)
-    elif isinstance(result, list):
-        for r, g in zip(result, gt):
-            ret = ret and is_equal(r, g, error)
-    elif isinstance(result, str):
-        ret = ret and result == gt
-    else:
-        ret = ret and np.isclose(result, gt, rtol=error)
-    return ret
-
+from test_utils import reset_ports
 
 dir_name = os.path.abspath(os.path.dirname(__file__))
 model_path = os.path.join(os.path.dirname(dir_name), "checkpoint")
@@ -36,11 +20,13 @@ with open(test_result_path, "r") as j_file:
     test_result = json.loads(j_file.read())
 
 
+@retry(RuntimeError, tries=3, delay=1)
+@reset_ports()
 def test_process_sample_face_detection_retail():
     model = InferenceModel(model_path=model_path)
     model.model_load()
     model.to_device(Device.cpu)
     ret = model.process_sample(test_image)
     ret = [pydantic.json.pydantic_encoder(item) for item in ret]
-
-    assert is_equal(ret, test_result["detection"])
+    del model
+    assert is_equal(ret, test_result)
