@@ -1,14 +1,13 @@
-import os
-
 import cv2
-import depthai as dai
 import numpy as np
-from modelplace_api import BaseModel, FacialLandmarks, Point, TaskType
+from modelplace_api import FacialLandmarks, Point
 
-from .face_processing import FaceProcessor, pad_img, wait_for_results
+from oak_inference_utils import OAKTwoStageModel
+
+from .face_processing import FaceProcessor, pad_img
 
 
-class InferenceModel(BaseModel):
+class InferenceModel(OAKTwoStageModel):
     def __init__(
         self,
         model_path: str,
@@ -16,21 +15,27 @@ class InferenceModel(BaseModel):
         model_description: str = "",
         threshold: float = 0.1,
         area_threshold: float = 0.6,
-        face_bbox_pad_percent: float = 0.15,
+        face_bbox_pad_percent: float = 0.25,
         **kwargs,
     ):
-        super().__init__(model_path, model_name, model_description, **kwargs)
-        self.face_processor = FaceProcessor(threshold)
+        super().__init__(
+            model_path=model_path,
+            input_name="data",
+            first_stage=FaceProcessor(threshold),
+            model_name=model_name,
+            model_description=model_description,
+            **kwargs,
+        )
         self.area_threshold = area_threshold
         self.face_bbox_pad_percent = face_bbox_pad_percent
         self.input_height, self.input_width = 48, 48
 
     def preprocess(self, data):
-        face_bboxes = self.get_faces(data)
+        face_bboxes = self.get_first_stage_result(data)
         preprocessed_data = []
         preprocessed_bboxes = []
         if face_bboxes == [[]]:
-            return [preprocessed_bboxes, preprocessed_data]
+            return None
         for i, img in enumerate(data):
             areas = [
                 (bbox.y2 - bbox.y1) * (bbox.x2 - bbox.x1) for bbox in face_bboxes[i]
@@ -102,7 +107,6 @@ class InferenceModel(BaseModel):
         for results, face_bboxes in zip(predictions[0], predictions[1]):
             image_predictions = []
             for result, face_bbox in zip(results, face_bboxes):
-                # keypoints = result[self.output_name].squeeze(0)
                 keypoints = np.array(result.getLayerFp16(result.getAllLayerNames()[0]))
                 bbox_w, bbox_h = (
                     (face_bbox.x2 - face_bbox.x1),
@@ -123,109 +127,3 @@ class InferenceModel(BaseModel):
             postprocessed_result.append(image_predictions)
 
         return postprocessed_result
-
-    def create_pipeline(self, model_blob):
-        self.pipeline = dai.Pipeline()
-
-        face_detector_in = self.pipeline.createXLinkIn()
-        face_detector_in.setStreamName("face_detector_in")
-
-        face_detector = self.pipeline.createNeuralNetwork()
-        face_detector.setBlobPath(model_blob["detector"])
-
-        face_detector_out = self.pipeline.createXLinkOut()
-        face_detector_out.setStreamName("face_detector_out")
-
-        landmark_detector_in = self.pipeline.createXLinkIn()
-        landmark_detector_in.setStreamName("landmark_detector_in")
-
-        landmark_detector_nn = self.pipeline.createNeuralNetwork()
-        landmark_detector_nn.setBlobPath(model_blob["landmark_detector"])
-
-        landmark_detector_out = self.pipeline.createXLinkOut()
-        landmark_detector_out.setStreamName("landmark_detector_out")
-
-        face_detector_in.out.link(face_detector.input)
-        face_detector.out.link(face_detector_out.input)
-        landmark_detector_in.out.link(landmark_detector_nn.input)
-        landmark_detector_nn.out.link(landmark_detector_out.input)
-
-    def model_load(self):
-        model_blob = {
-            "detector": os.path.join(self.model_path, "stage_1.blob"),
-            "landmark_detector": os.path.join(self.model_path, "stage_2.blob"),
-        }
-
-        self.create_pipeline(model_blob)
-
-        self.oak_device = dai.Device(self.pipeline)
-        self.oak_device.startPipeline()
-
-        self.face_detector_in = self.oak_device.getInputQueue("face_detector_in")
-        self.face_detector_out = self.oak_device.getOutputQueue("face_detector_out")
-        self.landmark_detector_in = self.oak_device.getInputQueue(
-            "landmark_detector_in",
-        )
-        self.landmark_detector_out = self.oak_device.getOutputQueue(
-            "landmark_detector_out",
-        )
-
-    def forward(self, data):
-        results = []
-        for sample in data[0]:
-            sample_results = []
-            for face in sample:
-                nn_data = dai.NNData()
-                nn_data.setLayer("0", face)
-                self.landmark_detector_in.send(nn_data)
-                assert wait_for_results(self.landmark_detector_out)
-                sample_results.append(self.landmark_detector_out.get())
-            results.append(sample_results)
-        data[0] = results
-        return data
-
-    def process_sample(self, image):
-        data = self.preprocess([image])
-        if not len(data[0]):
-            return []
-        output = self.forward(data)
-        results = self.postprocess(output)
-        return results[0]
-
-    def get_faces(self, data):
-        preprocessed_data = self.face_processor.preprocess(data)
-        face_output = self.face_processor.forward(
-            self.face_detector_in, self.face_detector_out, preprocessed_data,
-        )
-        face_bboxes = self.face_processor.postprocess(face_output)
-        return face_bboxes
-
-    def add_cam_to_pipeline(self, width, height):
-        cam = self.pipeline.createColorCamera()
-        cam.setPreviewSize(width, height)
-        cam.setResolution(dai.ColorCameraProperties.SensorResolution.THE_1080_P)
-        cam.setInterleaved(False)
-        cam.setBoardSocket(dai.CameraBoardSocket.RGB)
-        cam_out = self.pipeline.createXLinkOut()
-        cam_out.setStreamName("cam_out")
-        cam.preview.link(cam_out.input)
-
-        del self.oak_device
-
-        self.oak_device = dai.Device(self.pipeline)
-        self.oak_device.startPipeline()
-
-        cam_queue = self.oak_device.getOutputQueue("cam_out", maxSize=1, blocking=False)
-        self.face_detector_in = self.oak_device.getInputQueue("face_detector_in")
-        self.face_detector_out = self.oak_device.getOutputQueue("face_detector_out")
-        self.landmark_detector_in = self.oak_device.getInputQueue(
-            "landmark_detector_in",
-        )
-        self.landmark_detector_out = self.oak_device.getOutputQueue(
-            "landmark_detector_out",
-        )
-
-        return cam_queue
-
-    def to_device(self, _) -> None:
-        pass

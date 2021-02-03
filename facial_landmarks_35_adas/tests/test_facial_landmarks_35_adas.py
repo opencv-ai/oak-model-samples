@@ -28,4 +28,5 @@ def test_process_sample_facial_landmarks_35_adas():
     model.to_device(Device.cpu)
     ret = model.process_sample(test_image)
     ret = [pydantic.json.pydantic_encoder(item) for item in ret]
+    del model
     assert is_equal(ret, test_result)

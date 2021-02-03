@@ -45,7 +45,7 @@ POSE_PAIRS = [
 ]
 
 
-def getKeypoints(probMap, threshold=0.1):
+def get_keypoints(probMap, threshold=0.1):
 
     mapSmooth = cv2.GaussianBlur(probMap, (3, 3), 0, 0)
     mapMask = np.uint8(mapSmooth > threshold)
@@ -61,7 +61,7 @@ def getKeypoints(probMap, threshold=0.1):
     return keypoints
 
 
-def getValidPairs(outputs, w, h, detected_keypoints):
+def get_valid_pairs(outputs, w, h, detected_keypoints):
     valid_pairs = []
     invalid_pairs = []
     n_interp_samples = 10
@@ -134,7 +134,7 @@ def getValidPairs(outputs, w, h, detected_keypoints):
     return valid_pairs, invalid_pairs
 
 
-def getPersonwiseKeypoints(valid_pairs, invalid_pairs, keypoints_list):
+def get_personwise_keypoints(valid_pairs, invalid_pairs, keypoints_list):
     personwiseKeypoints = -1 * np.ones((0, 19))
 
     for k in range(len(MAP_IDX)):

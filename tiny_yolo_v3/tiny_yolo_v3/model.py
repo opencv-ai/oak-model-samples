@@ -1,44 +1,13 @@
 import math
-import os
-from datetime import datetime, timedelta
 
 import cv2
-import depthai as dai
 import numpy as np
-from modelplace_api import BaseModel, BBox
+from modelplace_api import BBox
 
-
-def wait_for_results(queue):
-    start = datetime.now()
-    while not queue.has():
-        if datetime.now() - start > timedelta(seconds=1):
-            return False
-    return True
-
-
-def pad_img(img, pad_value, target_dims):
-    h, w, _ = img.shape
-    pads = []
-    pads.append(int(math.floor((target_dims[0] - h) / 2.0)))
-    pads.append(int(math.floor((target_dims[1] - w) / 2.0)))
-    pads.append(int(target_dims[0] - h - pads[0]))
-    pads.append(int(target_dims[1] - w - pads[1]))
-    padded_img = cv2.copyMakeBorder(
-        img, pads[0], pads[2], pads[1], pads[3], cv2.BORDER_CONSTANT, value=pad_value,
-    )
-    return padded_img, pads
+from oak_inference_utils import DataInfo, OAKSingleStageModel
 
 
 class DetectionObject:
-    xmin = 0
-    ymin = 0
-    xmax = 0
-    ymax = 0
-    class_id = 0
-    confidence = 0.0
-    w = 0
-    h = 0
-
     def __init__(self, x, y, h, w, class_id, confidence, h_scale, w_scale):
         self.xmin = int((x - w / 2) * w_scale)
         self.ymin = int((y - h / 2) * h_scale)
@@ -50,7 +19,7 @@ class DetectionObject:
         self.confidence = confidence
 
 
-class InferenceModel(BaseModel):
+class InferenceModel(OAKSingleStageModel):
     def __init__(
         self,
         model_path: str,
@@ -60,7 +29,14 @@ class InferenceModel(BaseModel):
         iou_threshold: float = 0.4,
         **kwargs,
     ):
-        super().__init__(model_path, model_name, model_description, **kwargs)
+        super().__init__(
+            model_path=model_path,
+            input_name="inputs",
+            input_shapes=(416, 416),
+            model_name=model_name,
+            model_description=model_description,
+            **kwargs,
+        )
         self.threshold = threshold
         self.iou_threshold = iou_threshold
         self.class_names = {
@@ -251,21 +227,31 @@ class InferenceModel(BaseModel):
             resized_image = resized_image.transpose((2, 0, 1))
             resized_image = resized_image[np.newaxis].astype(np.float32)
             preprocessed_data.append(resized_image)
-            data_infos.append((height, width))
+            data_infos.append(
+                DataInfo(
+                    scales=(0, 0),
+                    pads=(0, 0),
+                    original_width=width,
+                    original_height=height,
+                ),
+            )
 
         return [preprocessed_data, data_infos]
 
     def nms(self, detections):
         bboxes = [[box.xmin, box.ymin, box.w, box.h] for box in detections]
         scores = [box.confidence for box in detections]
-        indeces = cv2.dnn.NMSBoxes(bboxes, scores, self.threshold, self.iou_threshold)
-        return [detections[id[0]] for id in indeces]
+        indices = cv2.dnn.NMSBoxes(bboxes, scores, self.threshold, self.iou_threshold)
+        return [detections[id[0]] for id in indices]
 
     def postprocess(self, predictions):
         postprocessed_result = []
         for result, input_info in zip(predictions[0], predictions[1]):
             objects = []
-            original_h, original_w = input_info
+            original_h, original_w = (
+                input_info.original_height,
+                input_info.original_width,
+            )
             h, w = self.input_height, self.input_width
             output_shapes = [(-1, 255, 26, 26), (-1, 255, 13, 13)]
             for output_name, output_shape in zip(
@@ -288,78 +274,13 @@ class InferenceModel(BaseModel):
             for obj in objects:
                 image_predictions.append(
                     BBox(
-                        x1=float(np.clip(obj.xmin, 0, original_w)),
-                        y1=float(np.clip(obj.ymin, 0, original_h)),
-                        x2=float(np.clip(obj.xmax, 0, original_w)),
-                        y2=float(np.clip(obj.ymax, 0, original_h)),
+                        x1=int(np.clip(obj.xmin, 0, original_w)),
+                        y1=int(np.clip(obj.ymin, 0, original_h)),
+                        x2=int(np.clip(obj.xmax, 0, original_w)),
+                        y2=int(np.clip(obj.ymax, 0, original_h)),
                         score=float(obj.confidence),
                         class_name=self.class_names[int(obj.class_id) + 1],
                     ),
                 )
             postprocessed_result.append(image_predictions)
         return postprocessed_result
-
-    def to_device(self, device):
-        pass
-
-    def process_sample(self, image):
-        data = self.preprocess([image])
-        output = self.forward(data)
-        results = self.postprocess(output)
-        return results[0]
-
-    def create_pipeline(self, model_blob):
-        self.pipeline = dai.Pipeline()
-
-        data_in = self.pipeline.createXLinkIn()
-        data_in.setStreamName("data_in")
-
-        model = self.pipeline.createNeuralNetwork()
-        model.setBlobPath(model_blob)
-        data_out = self.pipeline.createXLinkOut()
-        data_out.setStreamName("data_out")
-
-        data_in.out.link(model.input)
-        model.out.link(data_out.input)
-
-    def model_load(self):
-        model_blob = os.path.join(self.model_path, "model.blob")
-        self.create_pipeline(model_blob)
-
-        self.oak_device = dai.Device(self.pipeline)
-        self.oak_device.startPipeline()
-        self.data_in = self.oak_device.getInputQueue("data_in")
-        self.data_out = self.oak_device.getOutputQueue("data_out")
-        return self.pipeline
-
-    def forward(self, data):
-        results = []
-        for sample in data[0]:
-            nn_data = dai.NNData()
-            nn_data.setLayer("inputs", sample)
-            self.data_in.send(nn_data)
-            assert wait_for_results(self.data_out)
-            results.append(self.data_out.get())
-        data[0] = results
-        return data
-
-    def add_cam_to_pipeline(self, preview_width, preview_height):
-        cam = self.pipeline.createColorCamera()
-        cam.setPreviewSize(preview_width, preview_height)
-        cam.setResolution(dai.ColorCameraProperties.SensorResolution.THE_1080_P)
-        cam.setInterleaved(False)
-        cam.setBoardSocket(dai.CameraBoardSocket.RGB)
-        cam_out = self.pipeline.createXLinkOut()
-        cam_out.setStreamName("cam_out")
-        cam.preview.link(cam_out.input)
-
-        del self.oak_device
-
-        self.oak_device = dai.Device(self.pipeline)
-        self.oak_device.startPipeline()
-
-        cam_queue = self.oak_device.getOutputQueue("cam_out", maxSize=1, blocking=False)
-        self.data_in = self.oak_device.getInputQueue("data_in")
-        self.data_out = self.oak_device.getOutputQueue("data_out")
-
-        return cam_queue

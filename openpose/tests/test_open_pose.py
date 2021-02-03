@@ -29,4 +29,5 @@ def test_process_sample_open_pose():
     model.to_device(Device.cpu)
     ret = model.process_sample(test_image)
     ret = [pydantic.json.pydantic_encoder(item) for item in ret]
-    assert is_equal(ret, test_result)
+    del model
+    assert is_equal(ret, test_result, 0.02)

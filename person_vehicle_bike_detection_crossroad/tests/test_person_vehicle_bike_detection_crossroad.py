@@ -30,4 +30,5 @@ def test_process_sample_person_vehicle_bike_detection_crossroad():
     model.to_device(Device.cpu)
     ret = model.process_sample(test_image)
     ret = [pydantic.json.pydantic_encoder(item) for item in ret]
-    assert is_equal(ret, test_result["detection"])
+    del model
+    assert is_equal(ret, test_result)
