@@ -25,6 +25,7 @@ class InferenceModel(OAKSingleStageModel):
             **kwargs,
         )
         self.threshold = threshold
+        self.mean = np.array([123.68, 116.78, 103.94], dtype="float32")
 
     def preprocess(self, data):
         preprocessed_data = []
@@ -36,6 +37,7 @@ class InferenceModel(OAKSingleStageModel):
             scale_y = height / float(self.input_height)
             scaled_img = cv2.resize(img, (self.input_height, self.input_width))
             scaled_img = scaled_img.astype(np.float32)
+            scaled_img -= self.mean
             scaled_img = scaled_img.transpose((2, 0, 1))
             scaled_img = scaled_img[np.newaxis]
             data_infos.append(
@@ -62,28 +64,23 @@ class InferenceModel(OAKSingleStageModel):
             geometry2 = np.array(
                 result.getLayerFp16(result.getAllLayerNames()[2]),
             ).reshape((1, 1, 80, 80))
-            boxes, confidences, angles = decode_predictions(
-                scores, geometry1, geometry2, self.threshold,
+            scale_h, scale_w = input_info.scales
+            (boxes, confidences) = decode_predictions(
+                scores, geometry1, geometry2, self.threshold, scale_w, scale_h,
             )
-            boxes, angles = non_max_suppression(
-                np.array(boxes), probs=confidences, angles=np.array(angles),
-            )
-            scale_y, scale_x = input_info.scales
+            boxes = non_max_suppression(boxes, probs=confidences)
+
             image_predictions = []
-            for box, confidence, angle in zip(boxes, confidences, angles):
-                original_w = scale_x * self.input_width
-                original_h = scale_y * self.input_height
-                x1 = int(np.clip(box[0] * scale_x, 0, original_w))
-                y1 = int(np.clip(box[1] * scale_y, 0, original_h))
-                x2 = int(np.clip(box[2] * scale_x, 0, original_w))
-                y2 = int(np.clip(box[3] * scale_y, 0, original_h))
-                width = abs(x2 - x1)
-                height = abs(y2 - y1)
-                center_x = int(x1 + width / 2)
-                center_y = int(y1 + height / 2)
-                rotated_rect = ((center_x, center_y), ((x2 - x1), (y2 - y1)), -angle)
-                points = rotated_rectangle(rotated_rect)
-                points = [Point(x=x, y=y) for x, y in points]
+            for box in boxes:
+                if len(box) == 0:
+                    continue
+                original_w = scale_w * self.input_width
+                original_h = scale_h * self.input_height
+                points = rotated_rectangle(box)
+                points = [
+                    Point(x=np.clip(x, 0, original_w), y=np.clip(y, 0, original_h))
+                    for x, y in points
+                ]
                 image_predictions.append(TextPolygon(points=points))
             postprocessed_result.append(image_predictions)
         return postprocessed_result

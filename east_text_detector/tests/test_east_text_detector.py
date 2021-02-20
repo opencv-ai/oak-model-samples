@@ -12,7 +12,7 @@ from test_utils import reset_ports
 
 dir_name = os.path.abspath(os.path.dirname(__file__))
 model_path = os.path.join(os.path.dirname(dir_name), "checkpoint")
-test_image_path = os.path.join(dir_name, "000000000885.jpg")
+test_image_path = os.path.join(dir_name, "openvino_east_text_detector.png")
 test_result_path = os.path.join(dir_name, "east_text_detector_gt.json")
 
 test_image = Image.open(test_image_path)
