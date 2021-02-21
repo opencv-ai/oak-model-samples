@@ -31,7 +31,7 @@ setup_kwargs = {
     "python_requires": ">=3.7,<4.0",
     "install_requires": [
         "depthai==0.0.2.1+87247bfb645027a30c68191d88fe1b69b70e39ac",
-        "modelplace-api[vis]@https://github.com/opencv-ai/modelplace-api/archive/v0.4.0.zip",
+        "modelplace-api[vis]@https://github.com/opencv-ai/modelplace-api/archive/v0.4.2.zip",
     ],
 }
 

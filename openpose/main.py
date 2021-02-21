@@ -1,6 +1,6 @@
 import os
 
-from modelplace_api.visualization import draw_keypints_one_frame
+from modelplace_api.visualization import draw_keypoints_one_frame
 
 from oak_inference_utils import inference
 from openpose import InferenceModel
@@ -9,7 +9,7 @@ from openpose import InferenceModel
 def main():
     model_cls = InferenceModel
     root_model_path = os.path.abspath(os.path.dirname(__file__))
-    visualization = draw_keypints_one_frame
+    visualization = draw_keypoints_one_frame
     inference(model_cls, root_model_path, visualization)
 
 
