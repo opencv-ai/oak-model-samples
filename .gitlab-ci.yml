@@ -46,7 +46,7 @@ test_models_gen2_develop_commit:
   stage: test_packages
   before_script:
     - cd $CI_PROJECT_DIR
-    - python3.7 -m pip install modelplace-api[vis]@https://github.com/opencv-ai/modelplace-api/archive/v0.4.0.zip
+    - python3.7 -m pip install modelplace-api[vis]@https://github.com/opencv-ai/modelplace-api/archive/v0.4.2.zip
     - python3.7 -m pip install depthai==0.0.2.1+87247bfb645027a30c68191d88fe1b69b70e39ac -f https://artifacts.luxonis.com/artifactory/luxonis-python-snapshot-local/depthai/
     - ./ci/install_packages.sh --no-deps
   script:
@@ -64,7 +64,7 @@ test_models_gen2_develop_latest:
   stage: test_packages
   before_script:
     - cd $CI_PROJECT_DIR
-    - python3.7 -m pip install modelplace-api[vis]@https://github.com/opencv-ai/modelplace-api/archive/v0.4.0.zip
+    - python3.7 -m pip install modelplace-api[vis]@https://github.com/opencv-ai/modelplace-api/archive/v0.4.2.zip
     - python3.7 -m pip install -U --force-reinstall depthai@git+https://github.com/luxonis/depthai-python@gen2_develop
     - ./ci/install_packages.sh --no-deps
   script:

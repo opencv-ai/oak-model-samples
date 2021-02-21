@@ -15,7 +15,7 @@ model_path = os.path.join(os.path.dirname(dir_name), "checkpoint")
 test_image_path = os.path.join(dir_name, "openvino_east_text_detector.png")
 test_result_path = os.path.join(dir_name, "east_text_detector_gt.json")
 
-test_image = Image.open(test_image_path)
+test_image = Image.open(test_image_path).convert("RGB")
 with open(test_result_path, "r") as j_file:
     test_result = json.loads(j_file.read())
 
