@@ -2,7 +2,6 @@ import json
 import os
 
 import pydantic
-from modelplace_api import Device
 from modelplace_api.utils import is_equal
 from PIL import Image
 from retry import retry
@@ -25,7 +24,6 @@ with open(test_result_path) as fp:
 def test_process_sample_palm_detection():
     model = InferenceModel(model_path=model_path, threshold=0.6)
     model.model_load()
-    model.to_device(Device.cpu)
     ret = model.process_sample(test_image)
     ret = [pydantic.json.pydantic_encoder(item) for item in ret]
     del model

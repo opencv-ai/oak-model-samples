@@ -95,6 +95,3 @@ class FaceProcessor:
             results.append(out_queue.get())
         data[0] = results
         return data
-
-    def model_load(self):
-        pass
