@@ -14,7 +14,7 @@ class InferenceModel(OAKTwoStageModel):
         model_name: str = "",
         model_description: str = "",
         threshold: float = 0.1,
-        area_threshold: float = 0.6,
+        area_threshold: float = 0.15,
         face_bbox_pad_percent: float = 0.25,
         **kwargs,
     ):
@@ -50,21 +50,21 @@ class InferenceModel(OAKTwoStageModel):
                 # apply padding to face bbox to increase quality of facial landmark model
                 face_bbox_width = face_bbox.x2 - face_bbox.x1
                 face_bbox_hight = face_bbox.y2 - face_bbox.y1
-                face_bbox.x1 = np.float(
+                face_bbox.x1 = int(
                     np.clip(
                         face_bbox.x1 - face_bbox_width * self.face_bbox_pad_percent,
                         0,
                         img.shape[1],
                     ),
                 )
-                face_bbox.y2 = np.float(
+                face_bbox.y2 = int(
                     np.clip(
                         face_bbox.y2 + face_bbox_hight * self.face_bbox_pad_percent,
                         0,
                         img.shape[0],
                     ),
                 )
-                face_bbox.x2 = np.float(
+                face_bbox.x2 = int(
                     np.clip(
                         face_bbox.x2 + face_bbox_width * self.face_bbox_pad_percent,
                         0,
@@ -72,8 +72,7 @@ class InferenceModel(OAKTwoStageModel):
                     ),
                 )
                 cropped_face = img[
-                    int(face_bbox.y1) : int(face_bbox.y2),
-                    int(face_bbox.x1) : int(face_bbox.x2),
+                    face_bbox.y1 : face_bbox.y2, face_bbox.x1 : face_bbox.x2,
                 ]
                 height, width, _ = cropped_face.shape
                 if self.input_height / self.input_width < height / width:
