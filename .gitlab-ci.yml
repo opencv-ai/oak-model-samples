@@ -126,7 +126,7 @@ mirror_main:
   script:
     - git fetch origin ${CI_BUILD_REF_NAME}
     - git checkout ${CI_BUILD_REF_NAME}
-    - git lfs pull
+    - git lfs fetch --all
     - git remote set-url origin git@github.com:opencv-ai/oak-model-samples.git
     - git lfs push --all origin ${CI_BUILD_REF_NAME}
     - git push -u origin ${CI_BUILD_REF_NAME}
