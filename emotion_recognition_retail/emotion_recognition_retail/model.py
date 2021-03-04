@@ -14,7 +14,7 @@ class InferenceModel(OAKTwoStageModel):
         model_name: str = "",
         model_description: str = "",
         threshold: float = 0.1,
-        area_threshold: float = 0.6,
+        area_threshold: float = 0.15,
         **kwargs,
     ):
         super().__init__(
@@ -50,8 +50,7 @@ class InferenceModel(OAKTwoStageModel):
                     continue
 
                 cropped_face = img[
-                    int(face_bbox.y1) : int(face_bbox.y2),
-                    int(face_bbox.x1) : int(face_bbox.x2),
+                    face_bbox.y1 : face_bbox.y2, face_bbox.x1 : face_bbox.x2,
                 ]
                 height, width, _ = cropped_face.shape
                 if self.input_height / self.input_width < height / width:

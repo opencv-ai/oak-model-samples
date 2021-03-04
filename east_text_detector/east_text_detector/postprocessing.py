@@ -2,7 +2,7 @@ import numpy as np
 
 
 def rotated_rectangle(rotatedRect):
-    (x, y), (width, height), angle = rotatedRect
+    x, y, width, height, angle = rotatedRect
 
     pt1_1 = (int(x + width / 2), int(y + height / 2))
     pt2_1 = (int(x + width / 2), int(y - height / 2))
@@ -38,10 +38,10 @@ def rotated_rectangle(rotatedRect):
     return points
 
 
-def non_max_suppression(boxes, probs=None, angles=None, overlapThresh=0.4):
+def non_max_suppression(boxes, probs=None, overlapThresh=0.4):
     # if there are no boxes, return an empty list
-    if len(boxes) == 0:
-        return [], []
+    if boxes.size == 0:
+        return []
 
     # if the bounding boxes are integers, convert them to floats -- this
     # is important since we'll be doing a bunch of divisions
@@ -51,11 +51,15 @@ def non_max_suppression(boxes, probs=None, angles=None, overlapThresh=0.4):
     # initialize the list of picked indexes
     pick = []
 
+    center_x = boxes[:, 0]
+    center_y = boxes[:, 1]
+    w = boxes[:, 2]
+    h = boxes[:, 3]
     # grab the coordinates of the bounding boxes
-    x1 = boxes[:, 0]
-    y1 = boxes[:, 1]
-    x2 = boxes[:, 2]
-    y2 = boxes[:, 3]
+    x1 = center_x - w / 2
+    y1 = center_y - h / 2
+    x2 = center_x + w / 2
+    y2 = center_y + h / 2
 
     # compute the area of the bounding boxes and grab the indexes to sort
     # (in the case that no probabilities are provided, simply sort on the bottom-left y-coordinate)
@@ -95,62 +99,27 @@ def non_max_suppression(boxes, probs=None, angles=None, overlapThresh=0.4):
         )
 
     # return only the bounding boxes that were picked
-    return boxes[pick].astype("int"), angles[pick]
+    return boxes[pick]
 
 
-def decode_predictions(scores, geometry1, geometry2, threshold):
-    # grab the number of rows and columns from the scores volume, then
-    # initialize our set of bounding box rectangles and corresponding
-    # confidence scores
-    (numRows, numCols) = scores.shape[2:4]
-    rects = []
-    confidences = []
-    angles = []
+def decode_predictions(scores, geometry1, geometry2, threshold, scale_w, scale_h):
 
-    # loop over the number of rows
-    for y in range(0, numRows):
-        # extract the scores (probabilities), followed by the
-        # geometrical data used to derive potential bounding box
-        # coordinates that surround text
-        scoresData = scores[0, 0, y]
-        xData0 = geometry1[0, 0, y]
-        xData1 = geometry1[0, 1, y]
-        xData2 = geometry1[0, 2, y]
-        xData3 = geometry1[0, 3, y]
-        anglesData = geometry2[0, 0, y]
+    scores = scores.squeeze()
+    valid_detections = scores > threshold
+    anchor_grid = 4 * np.indices(scores.shape)
+    scores = scores[valid_detections]
+    offsets_top = geometry1[0, 0, valid_detections]
+    offsets_right = geometry1[0, 1, valid_detections]
+    offsets_bottom = geometry1[0, 2, valid_detections]
+    offsets_left = geometry1[0, 3, valid_detections]
+    top_left_y = anchor_grid[0, valid_detections] - offsets_top
+    top_left_x = anchor_grid[1, valid_detections] - offsets_left
+    h = offsets_top + offsets_bottom
+    w = offsets_right + offsets_left
+    center_y = (top_left_y + h / 2) * scale_h
+    center_x = (top_left_x + w / 2) * scale_w
+    h, w = h * scale_h, w * scale_w
+    angles = geometry2.squeeze()[valid_detections]
 
-        # loop over the number of columns
-        for x in range(0, numCols):
-            # if our score does not have sufficient probability,
-            # ignore it
-            if scoresData[x] < threshold:
-                continue
-
-            # compute the offset factor as our resulting feature
-            # maps will be 4x smaller than the input image
-            (offsetX, offsetY) = (x * 4.0, y * 4.0)
-
-            # extract the rotation angle for the prediction and
-            # then compute the sin and cosine
-            angle = anglesData[x]
-            cos = np.cos(angle)
-            sin = np.sin(angle)
-
-            # use the geometry volume to derive the width and height
-            # of the bounding box
-            h = xData0[x] + xData2[x]
-            w = xData1[x] + xData3[x]
-
-            # compute both the starting and ending (x, y)-coordinates
-            # for the text prediction bounding box
-            endX = int(offsetX + (cos * xData1[x]) + (sin * xData2[x]))
-            endY = int(offsetY - (sin * xData1[x]) + (cos * xData2[x]))
-            startX = int(endX - w)
-            startY = int(endY - h)
-
-            # add the bounding box coordinates and probability score
-            # to our respective lists
-            rects.append((startX, startY, endX, endY))
-            confidences.append(scoresData[x])
-            angles.append(angle)
-    return (rects, confidences, angles)
+    rects = np.dstack((center_x, center_y, w, h, -angles)).squeeze()
+    return (rects, scores)

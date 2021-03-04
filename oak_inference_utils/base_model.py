@@ -7,7 +7,7 @@ from typing import Any, Tuple
 import cv2
 import depthai as dai
 import pydantic
-from modelplace_api import BaseModel
+from modelplace_api import BaseModel, Device
 
 
 def pad_img(img, pad_value, target_dims):
@@ -77,7 +77,7 @@ class OAKSingleStageModel(BaseModel, ABC):
         data_in.out.link(self.model_blob.input)
         self.model_blob.out.link(data_out.input)
 
-    def model_load(self):
+    def model_load(self, device=Device.cpu):
         model_blob = os.path.join(self.model_path, "model.blob")
         self.create_pipeline(model_blob)
 
@@ -143,9 +143,6 @@ class OAKSingleStageModel(BaseModel, ABC):
         else:
             raise AttributeError("Initialize camera with `add_cam_to_pipeline` method")
 
-    def to_device(self, device):
-        pass
-
     def get_input_shapes(self):
         return self.input_width, self.input_height
 
@@ -198,7 +195,7 @@ class OAKTwoStageModel(BaseModel, ABC):
         second_stage_in.out.link(second_stage_nn.input)
         second_stage_nn.out.link(second_stage_out.input)
 
-    def model_load(self):
+    def model_load(self, device=Device.cpu):
         model_blob = {
             "first_stage_nn": os.path.join(self.model_path, "stage_1.blob"),
             "second_stage_nn": os.path.join(self.model_path, "stage_2.blob"),
@@ -214,7 +211,6 @@ class OAKTwoStageModel(BaseModel, ABC):
         self.second_stage_in = self.oak_device.getInputQueue("second_stage_in")
         self.second_stage_out = self.oak_device.getOutputQueue("second_stage_out")
         self.cam_queue = None
-        self.first_stage.model_load()
 
     def forward(self, data):
         results = []
@@ -266,9 +262,6 @@ class OAKTwoStageModel(BaseModel, ABC):
         )
         first_stage_result = self.first_stage.postprocess(first_stage_output)
         return first_stage_result
-
-    def to_device(self, device):
-        pass
 
     def get_input_shapes(self):
         return self.first_stage.get_input_shapes()
