@@ -3,7 +3,7 @@
 1. Purchase a DepthAI model (see [shop.luxonis.com](https://shop.luxonis.com/))
 2. Set up a package:
 
-   2.1 `python3 setup.py bdist_wheel && rm -R build/ *.egg-info`
+   2.1 `pip3 install wheel && python3 setup.py bdist_wheel && rm -R build/ *.egg-info`
 
    2.2 `pip3 install dist/*.whl -f https://artifacts.luxonis.com/artifactory/luxonis-python-snapshot-local/depthai/ && rm -R dist/`
 
