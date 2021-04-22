@@ -1,5 +1,12 @@
 ## Installation
 
+## Pre-requirements
+
+Make sure you have installed:
+
+- python3.7
+- [git-lfs](https://docs.github.com/en/github/managing-large-files/installing-git-large-file-storage)
+
 1. Purchase a DepthAI model (see [shop.luxonis.com](https://shop.luxonis.com/))
 2. Set up a package:
 
@@ -12,13 +19,13 @@
 
 <p>
 
-  Set up a package:
+Set up a package:
 
-  1. `pip3 install wheel && python setup.py bdist_wheel`
+1. `pip3 install wheel && python setup.py bdist_wheel`
 
-  2. `for /r %G in ("dist\*.whl") do pip3 install "%~G" -f https://artifacts.luxonis.com/artifactory/luxonis-python-snapshot-local/depthai/`
+2. `for /r %G in ("dist\*.whl") do pip3 install "%~G" -f https://artifacts.luxonis.com/artifactory/luxonis-python-snapshot-local/depthai/`
 
-  3. `for /d %G in ("*.egg-info", "build\", "dist") do rd /s /q "%~G"`
+3. `for /d %G in ("*.egg-info", "build\", "dist") do rd /s /q "%~G"`
 
 </details>
 
@@ -66,17 +73,18 @@ python3 main.py -cam -vis
 
   <p>
 
-  If while running the app, you get an error:
+If while running the app, you get an error:
 
-  `Failed to find device after booting, error message: X_LINK_DEVICE_NOT_FOUND`
+`Failed to find device after booting, error message: X_LINK_DEVICE_NOT_FOUND`
 
-  1. Run the following command:
+1. Run the following command:
 
-        ```bash
-        echo 'SUBSYSTEM=="usb", ATTRS{idVendor}=="03e7", MODE="0666"' | \
-        sudo tee /etc/udev/rules.d/80-movidius.rules && \
-        sudo udevadm control --reload-rules
-        ```
-  2. Unplug and replug an OAK
+   ```bash
+   echo 'SUBSYSTEM=="usb", ATTRS{idVendor}=="03e7", MODE="0666"' | \
+   sudo tee /etc/udev/rules.d/80-movidius.rules && \
+   sudo udevadm control --reload-rules
+   ```
+
+2. Unplug and replug an OAK
 
 </details>
