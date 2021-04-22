@@ -11,7 +11,7 @@ package_data = {
 }
 
 
-extra_requirements = "vis-windows" if os.name == "nt" else "vis"
+extra_requirements = "vis-windows"
 setup_kwargs = {
     "name": "emotion_recognition_retail",
     "version": "0.2.0",
