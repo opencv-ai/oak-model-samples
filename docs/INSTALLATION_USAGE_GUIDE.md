@@ -4,8 +4,8 @@
 
 Make sure you have installed:
 
-- python3.7 or python3.8
-- [git-lfs](https://docs.github.com/en/github/managing-large-files/installing-git-large-file-storage)
+- Python3.7+
+- [Git-LFS](https://docs.github.com/en/github/managing-large-files/installing-git-large-file-storage)
 
 1. Purchase a DepthAI model (see [shop.luxonis.com](https://shop.luxonis.com/))
 2. Set up a package:
