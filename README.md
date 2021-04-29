@@ -1,6 +1,6 @@
 # oak-model-samples
 
-This repository contains OAK-ready models from [ModelPlace.AI](https://modelplace.ai).
+This repository contains OAK-ready models from [Modelplace.AI](https://modelplace.ai).
 
 ## Usage
 
