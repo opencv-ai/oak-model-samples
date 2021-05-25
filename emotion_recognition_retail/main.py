@@ -7,7 +7,6 @@ from oak_inference_utils import inference
 
 
 def main():
-    model_cls = InferenceModel
     root_model_path = os.path.abspath(os.path.dirname(__file__))
     model_cls = InferenceModel
     visualization = draw_emotion_recognition_one_frame

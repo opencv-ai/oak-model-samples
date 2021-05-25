@@ -1,43 +1,27 @@
-import os
-
 import cv2
+import depthai as dai
 import numpy as np
-from modelplace_api import BBox, Landmarks, Point
-
-from oak_inference_utils import DataInfo, OAKSingleStageModel, pad_img
-
+from modelplace_api import Point, BBox, Landmarks
+import os
+from oak_inference_utils import DataInfo, pad_img, wait_for_results
 from .postprocessing import Postprocessor
 
 
-class InferenceModel(OAKSingleStageModel):
-    def __init__(
-        self,
-        model_path: str,
-        model_name: str = "",
-        model_description: str = "",
-        threshold: float = 0.8,
-        **kwargs,
-    ):
-        super().__init__(
-            model_path=model_path,
-            input_name="input",
-            input_shapes=(128, 128),
-            model_name=model_name,
-            model_description=model_description,
-            **kwargs,
-        )
+class PalmProcessor:
+    def __init__(self, threshold):
         self.threshold = threshold
+        self.input_height, self.input_width = (128, 128)
         self.output_names = ["classificators", "regressors"]
-        self.class_names = {0: "background", 1: "palm"}
         self.postprocessor = Postprocessor(
             os.path.join(os.path.dirname(__file__), "anchors.csv"),
         )
+        self.class_names = {0: "background", 1: "palm"}
 
     def preprocess(self, data):
         preprocessed_data = []
         data_infos = []
         for img in data:
-            img = np.array(img)
+            img = np.array(img)[:, :, ::-1]
             height, width, _ = img.shape
             if self.input_height / self.input_width < height / width:
                 scale = self.input_height / height
@@ -50,6 +34,7 @@ class InferenceModel(OAKSingleStageModel):
             padded_img, pad = pad_img(
                 scaled_img, (0, 0, 0), [self.input_height, self.input_width],
             )
+
             padded_img = padded_img.transpose((2, 0, 1))
             padded_img = padded_img[np.newaxis].astype(np.float32)
             preprocessed_data.append(padded_img)
@@ -111,3 +96,17 @@ class InferenceModel(OAKSingleStageModel):
 
         return postprocessed_result
 
+    def get_input_shapes(self):
+        return self.input_width, self.input_height
+
+    @staticmethod
+    def forward(in_queue, out_queue, data):
+        results = []
+        for sample in data[0]:
+            nn_data = dai.NNData()
+            nn_data.setLayer("data", sample)
+            in_queue.send(nn_data)
+            assert wait_for_results(out_queue)
+            results.append(out_queue.get())
+        data[0] = results
+        return data
