@@ -22,9 +22,12 @@ with open(test_result_path) as fp:
 @retry(RuntimeError, tries=3, delay=1)
 @reset_ports()
 def test_process_sample_palm_detection():
-    model = InferenceModel(model_path=model_path, threshold=0.6)
+    model = InferenceModel(model_path=model_path, threshold=0.3)
     model.model_load()
     ret = model.process_sample(test_image)
     ret = [pydantic.json.pydantic_encoder(item) for item in ret]
     del model
     assert is_equal(ret, test_result)
+
+
+test_process_sample_palm_detection()

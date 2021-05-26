@@ -1,9 +1,12 @@
+import os
+
 import cv2
 import depthai as dai
 import numpy as np
-from modelplace_api import Point, BBox, Landmarks
-import os
+from modelplace_api import BBox, Landmarks, Point
+
 from oak_inference_utils import DataInfo, pad_img, wait_for_results
+
 from .postprocessing import Postprocessor
 
 

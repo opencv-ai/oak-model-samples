@@ -1,8 +1,12 @@
 import os
-from modelplace_api import  Joint, Link, Pose
+
+from modelplace_api import Joint, Link, Pose
+
 from oak_inference_utils import OAKTwoStageModel
-from .utils import *
+
 from .palm_processing import PalmProcessor
+from .utils import *
+
 
 class InferenceModel(OAKTwoStageModel):
     coco_part_labels = [
@@ -71,6 +75,7 @@ class InferenceModel(OAKTwoStageModel):
         )
         self.output_names = ["Identity_dense/BiasAdd/Add", "Identity_1"]
         self.area_threshold = area_threshold
+        self.threshold = threshold
         self.input_width, self.input_height = (
             224,
             224,
@@ -115,11 +120,14 @@ class InferenceModel(OAKTwoStageModel):
             image_predictions = []
             for result, region in zip(results, regions):
                 region.lm_score = np.array(result.getLayerFp16(self.output_names[1]))
+                if region.lm_score < self.threshold:
+                    continue
                 lm_raw = np.array(result.getLayerFp16(self.output_names[0]))
-                landmarks = []
                 # normalize landmarks
-                for i in range(int(len(lm_raw) / 3)):
-                    landmarks.append(lm_raw[3 * i : 3 * (i + 1)] / self.input_width)
+                landmarks = [
+                    lm_raw[3 * i : 3 * (i + 1)] / self.input_width
+                    for i in range(len(lm_raw) // 3)
+                ]
                 src = np.array([(0, 0), (1, 0), (1, 1)], dtype=np.float32)
                 dst = np.array(
                     [(x, y) for x, y in region.rect_points[1:]], dtype=np.float32,
@@ -132,7 +140,7 @@ class InferenceModel(OAKTwoStageModel):
                 lm_xy = np.squeeze(cv2.transform(lm_xy, mat)).astype(np.int)
                 image_predictions.append(
                     Pose(
-                        score=1.0,
+                        score=region.lm_score,
                         links=self.create_links(lm_xy, self.coco_part_idx),
                         skeleton_parts=self.coco_part_labels,
                     ),
@@ -161,4 +169,3 @@ class InferenceModel(OAKTwoStageModel):
             )
             links.append(link)
         return links
-

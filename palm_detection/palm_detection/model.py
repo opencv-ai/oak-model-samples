@@ -15,7 +15,7 @@ class InferenceModel(OAKSingleStageModel):
         model_path: str,
         model_name: str = "",
         model_description: str = "",
-        threshold: float = 0.8,
+        threshold: float = 0.5,
         **kwargs,
     ):
         super().__init__(
@@ -37,7 +37,7 @@ class InferenceModel(OAKSingleStageModel):
         preprocessed_data = []
         data_infos = []
         for img in data:
-            img = np.array(img)
+            img = np.array(img)[:, :, ::-1]
             height, width, _ = img.shape
             if self.input_height / self.input_width < height / width:
                 scale = self.input_height / height
@@ -110,4 +110,3 @@ class InferenceModel(OAKSingleStageModel):
             postprocessed_result.append(image_predictions)
 
         return postprocessed_result
-

@@ -95,6 +95,6 @@ class Postprocessor:
         for i in range(keypoints.shape[0]):
             kps = []
             for kp in range(7):
-                kps.append(keypoints[i, kp * 2: 2 + kp * 2])
+                kps.append(keypoints[i, kp * 2 : 2 + kp * 2])
             kps_total.append(kps)
         return bboxes, kps_total
