@@ -18,10 +18,12 @@ test_image = Image.open(test_image_path).convert("RGB")
 with open(test_result_path, "r") as j_file:
     test_result = json.loads(j_file.read())
 
+import modelplace_api
 
 @retry(RuntimeError, tries=3, delay=1)
 @reset_ports()
 def test_process_sample_hand_pose_estimation():
+    print(modelplace_api.__version__)
     model = InferenceModel(model_path=model_path, threshold=0.3)
     model.model_load()
     ret = model.process_sample(test_image)
