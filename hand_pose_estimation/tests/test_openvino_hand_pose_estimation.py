@@ -28,6 +28,3 @@ def test_process_sample_hand_pose_estimation():
     ret = [pydantic.json.pydantic_encoder(item) for item in ret]
     del model
     assert is_equal(ret, test_result)
-
-
-test_process_sample_hand_pose_estimation()

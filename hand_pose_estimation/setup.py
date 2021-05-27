@@ -13,7 +13,7 @@ package_data = {
 extra_requirements = "vis-windows"
 setup_kwargs = {
     "name": "hand_pose_estimation",
-    "version": "0.2.0",
+    "version": "0.2.1",
     "description": "Hands 21 keypoint estimation",
     "long_description": None,
     "author": "",

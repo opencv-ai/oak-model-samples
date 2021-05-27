@@ -88,7 +88,7 @@ class InferenceModel(OAKTwoStageModel):
         if hands_bboxes == [[]]:
             return [preprocessed_data, preprocessed_hand_regions]
         for i, img in enumerate(data):
-            img = np.array(data[i])
+            img = np.array(data[i])[:, :, ::-1]
             height, width, _ = img.shape
             if not hands_bboxes[i]:
                 preprocessed_data.append([])
