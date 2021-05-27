@@ -1,6 +1,7 @@
 import json
 import os
 
+import modelplace_api
 import pydantic
 from modelplace_api.utils import is_equal
 from PIL import Image
@@ -18,7 +19,6 @@ test_image = Image.open(test_image_path).convert("RGB")
 with open(test_result_path, "r") as j_file:
     test_result = json.loads(j_file.read())
 
-import modelplace_api
 
 @retry(RuntimeError, tries=3, delay=1)
 @reset_ports()
