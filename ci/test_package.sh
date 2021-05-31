@@ -12,7 +12,7 @@ for model_folder in "${models[@]}"; do
       cd ${model_folder}
       for ((iteration_amount = 1; iteration_amount <= ${retries}; iteration_amount++)); do
           python3.7 -m pytest -s -vv
-          if [ $? == 0 ]; then
+          if [ $? -ne 0 ]; then
               test_status=1
               echo -e "Failed test for: " ${model_folder::-1}
           fi
