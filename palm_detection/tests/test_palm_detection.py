@@ -1,16 +1,18 @@
 import json
 import os
 
-import pydantic
-from modelplace_api.utils import is_equal
-from loguru import logger
 import modelplace_api
-logger.info(f"Modelplace Version:{modelplace_api.__version__}")
+import pydantic
+from loguru import logger
+from modelplace_api.utils import is_equal
 from PIL import Image
 from retry import retry
 
 from palm_detection import InferenceModel
 from test_utils import reset_ports
+
+logger.info(f"Modelplace Version:{modelplace_api.__version__}")
+
 
 dir_name = os.path.abspath(os.path.dirname(__file__))
 model_path = os.path.join(os.path.dirname(dir_name), "checkpoint")
