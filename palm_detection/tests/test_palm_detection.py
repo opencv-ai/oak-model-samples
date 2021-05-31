@@ -3,6 +3,9 @@ import os
 
 import pydantic
 from modelplace_api.utils import is_equal
+from loguru import logger
+import modelplace_api
+logger.info(f"Modelplace Version:{modelplace_api.__version__}")
 from PIL import Image
 from retry import retry
 
