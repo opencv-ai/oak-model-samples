@@ -35,6 +35,10 @@ class BBox(pydantic.BaseModel):
 
 
 class RelativePalmLabel(pydantic.BaseModel):
+    """
+    PalmLabel with relative coordinates
+    """
+
     bbox: BBox
     keypoints: List[Point]
 
