@@ -54,6 +54,7 @@ jobs:
             "face_detection_adas",
             "face_detection_retail",
             "facial_landmarks_35_adas",
+            "hand_pose_estimation",
             "landmarks_regression_retail",
             "lightweight_openpose",
             "mobilenet_ssd",
