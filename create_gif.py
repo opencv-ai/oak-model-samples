@@ -15,7 +15,7 @@ MODEL_LIST = {
     "mobilenet_ssd": "draw_detections_one_frame",
     "openpose": "draw_keypoints_one_frame",
     "pedestrian_detection_adas": "draw_detections_one_frame",
-    "palm_detection": "draw_detections_one_frame",
+    "palm_detection": "draw_landmarks_one_frame",
     "dbface": "draw_landmarks_one_frame",
     "person_detection_retail": "draw_detections_one_frame",
     "vehicle_license_plate_detection_barrier": "draw_detections_one_frame",
@@ -28,6 +28,7 @@ MODEL_LIST = {
     "person_vehicle_bike_detection_crossroad": "draw_detections_one_frame",
     "tiny_yolo_v3": "draw_detections_one_frame",
     "yolov4_tiny": "draw_detections_one_frame",
+    "hand_pose_estimation": "draw_keypoints_one_frame",
 }
 
 
