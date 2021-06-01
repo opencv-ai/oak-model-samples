@@ -11,7 +11,6 @@ from retry import retry
 from palm_detection import InferenceModel
 from test_utils import reset_ports
 
-logger.info(f"Modelplace Version:{modelplace_api.__version__}")
 
 
 dir_name = os.path.abspath(os.path.dirname(__file__))
@@ -35,4 +34,3 @@ def test_process_sample_palm_detection():
     assert is_equal(ret, test_result)
 
 
-test_process_sample_palm_detection()

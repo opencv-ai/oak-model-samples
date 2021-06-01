@@ -12,7 +12,7 @@ SHIFT_X = 0
 SHIFT_Y = -0.5
 
 
-class Point(pydantic.BaseModel):
+class RelativePoint(pydantic.BaseModel):
     """
     Point with relative coordinates
     """
@@ -21,7 +21,7 @@ class Point(pydantic.BaseModel):
     y: float
 
 
-class BBox(pydantic.BaseModel):
+class RelativeBBox(pydantic.BaseModel):
     """
     BBox with relative coordinates
     """
@@ -39,8 +39,8 @@ class RelativePalmLabel(pydantic.BaseModel):
     PalmLabel with relative coordinates
     """
 
-    bbox: BBox
-    keypoints: List[Point]
+    bbox: RelativeBBox
+    keypoints: List[RelativePoint]
 
 
 class HandRegion:
@@ -67,7 +67,7 @@ def convert_palm_label_to_relative_coordinates(
                     palm_label (class): palm label with relative coordinates
     """
     relative_coordinates_label = RelativePalmLabel(
-        bbox=BBox(
+        bbox=RelativeBBox(
             x1=palm_label.bbox.x1 / width,
             x2=palm_label.bbox.x2 / width,
             y1=palm_label.bbox.y1 / height,
@@ -76,7 +76,7 @@ def convert_palm_label_to_relative_coordinates(
             class_name=palm_label.bbox.class_name,
         ),
         keypoints=[
-            Point(x=keypoint.x / width, y=keypoint.y / height)
+            RelativePoint(x=keypoint.x / width, y=keypoint.y / height)
             for keypoint in palm_label.keypoints
         ],
     )
