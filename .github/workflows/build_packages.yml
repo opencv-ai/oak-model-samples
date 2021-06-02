@@ -18,7 +18,6 @@ jobs:
 
     env:
       DEPTHAI_VERSION: 0.0.2.1+87247bfb645027a30c68191d88fe1b69b70e39ac
-
     steps:
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v2
