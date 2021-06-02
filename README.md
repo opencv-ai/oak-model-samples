@@ -52,3 +52,4 @@ Please, use the links listed in the table below to find a model and follow the i
 | -------------------- | ---------------------------------------- | ------------------------------------ |
 | openpose             | [:radio_button:](./openpose)             | ![](./openpose/demo.gif)             |
 | lightweight_openpose | [:radio_button:](./lightweight_openpose) | ![](./lightweight_openpose/demo.gif) |
+| hand_pose_estimation | [:radio_button:](./hand_pose_estimation) | ![](./hand_pose_estimation/demo.gif) |

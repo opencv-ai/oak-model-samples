@@ -73,7 +73,7 @@ class Postprocessor:
     def decode_predictions(self, predictions, output_names):
         out_clf = self._sigm(predictions[0])
         out_reg = predictions[1]
-        keypoints = out_reg[:, 4:] * np.tile(self.anchors[:, 2:4], 7) / 128 + np.tile(
+        keypoints = out_reg[:, 4:] * np.tile(self.anchors[:, 2:4], 7) / 256 + np.tile(
             self.anchors[:, 0:2], 7,
         )
         bboxes = np.empty((out_clf.shape[0], 5))

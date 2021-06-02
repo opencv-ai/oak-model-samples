@@ -4,18 +4,17 @@ from shutil import copytree
 
 from setuptools import setup
 
-packages = ["palm_detection", "oak_inference_utils"]
+packages = ["hand_pose_estimation", "oak_inference_utils"]
 
 package_data = {
     "": ["*"],
 }
 
 extra_requirements = "vis-windows"
-
 setup_kwargs = {
-    "name": "palm_detection",
-    "version": "0.2.0",
-    "description": "SSD-based palm detector with a custom encoder inside",
+    "name": "hand_pose_estimation",
+    "version": "0.2.1",
+    "description": "Hands 21 keypoint estimation",
     "long_description": None,
     "author": "",
     "author_email": "",

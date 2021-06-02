@@ -18,23 +18,22 @@ jobs:
 
     env:
       DEPTHAI_VERSION: 0.0.2.1+87247bfb645027a30c68191d88fe1b69b70e39ac
-    
     steps:
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v2
-      with:
-        python-version: ${{ matrix.python-version }}
-        architecture: ${{ matrix.platform }}
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+          architecture: ${{ matrix.platform }}
 
-    - name: Download a depthai wheel
-      run: pip3 download depthai==${{ env.DEPTHAI_VERSION }} -f https://artifacts.luxonis.com/artifactory/luxonis-python-snapshot-local/depthai/
+      - name: Download a depthai wheel
+        run: pip3 download depthai==${{ env.DEPTHAI_VERSION }} -f https://artifacts.luxonis.com/artifactory/luxonis-python-snapshot-local/depthai/
 
-    - name: Save the depthai wheel
-      uses: actions/upload-artifact@v2
-      with:
-        name: depthai_${{ matrix.python-version }}_${{ matrix.os }}_${{ matrix.platform }}
-        path: depthai*
-  
+      - name: Save the depthai wheel
+        uses: actions/upload-artifact@v2
+        with:
+          name: depthai_${{ matrix.python-version }}_${{ matrix.os }}_${{ matrix.platform }}
+          path: depthai*
+
   build_model:
     runs-on: ${{ matrix.os }}
     needs: [download_depthai]
@@ -45,59 +44,82 @@ jobs:
         os: [windows-latest, ubuntu-18.04, ubuntu-20.04]
         python-version: [3.7, 3.8, 3.9]
         platform: [x64]
-        build-dir: ['age_gender_recognition_retail', 'dbface', 'east_text_detector', 'emotion_recognition_retail', 'face_detection_adas', 'face_detection_retail', 'facial_landmarks_35_adas', 'landmarks_regression_retail', 'lightweight_openpose', 'mobilenet_ssd', 'openpose', 'palm_detection', 'pedestrian_detection_adas', 'person_detection_retail', 'person_vehicle_bike_detection_crossroad', 'textboxes_plus_plus', 'tiny_yolo_v3', 'vehicle_detection_adas', 'vehicle_license_plate_detection_barrier', 'yolov4_tiny']
+        build-dir:
+          [
+            "age_gender_recognition_retail",
+            "dbface",
+            "east_text_detector",
+            "emotion_recognition_retail",
+            "face_detection_adas",
+            "face_detection_retail",
+            "facial_landmarks_35_adas",
+            "hand_pose_estimation",
+            "landmarks_regression_retail",
+            "lightweight_openpose",
+            "mobilenet_ssd",
+            "openpose",
+            "palm_detection",
+            "pedestrian_detection_adas",
+            "person_detection_retail",
+            "person_vehicle_bike_detection_crossroad",
+            "textboxes_plus_plus",
+            "tiny_yolo_v3",
+            "vehicle_detection_adas",
+            "vehicle_license_plate_detection_barrier",
+            "yolov4_tiny",
+          ]
 
     steps:
-    - name: Checkout
-      uses: actions/checkout@v2
-      with:
-        fetch-depth: 0
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
 
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v2
-      with:
-        python-version: ${{ matrix.python-version }}
-        architecture: ${{ matrix.platform }}
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+          architecture: ${{ matrix.platform }}
 
-    - name: Download the depthai wheel
-      uses: actions/download-artifact@v2
-      with:
-        name: depthai_${{ matrix.python-version }}_${{ matrix.os }}_${{ matrix.platform }}
-        path: ./
+      - name: Download the depthai wheel
+        uses: actions/download-artifact@v2
+        with:
+          name: depthai_${{ matrix.python-version }}_${{ matrix.os }}_${{ matrix.platform }}
+          path: ./
 
-    - name: Build the depthai on Windows
-      if: ${{ matrix.os == 'windows-latest' }}
-      run: FOR %%i in (*.whl) DO python -m pip install %%i
-      shell: cmd
+      - name: Build the depthai on Windows
+        if: ${{ matrix.os == 'windows-latest' }}
+        run: FOR %%i in (*.whl) DO python -m pip install %%i
+        shell: cmd
 
-    - name: Build the depthai on Ubuntu
-      if: ${{ matrix.os == 'ubuntu-18.04' || matrix.os == 'ubuntu-20.04' }}
-      run: python -m pip install *.whl
+      - name: Build the depthai on Ubuntu
+        if: ${{ matrix.os == 'ubuntu-18.04' || matrix.os == 'ubuntu-20.04' }}
+        run: python -m pip install *.whl
 
-    - name: Build the wheel on Windows
-      if: ${{ matrix.os == 'windows-latest' }}
-      run: |
-        python --version
-        cd ${{ github.workspace }}/${{ matrix.build-dir }}
-        pip3 install wheel && python setup.py bdist_wheel
-      shell: cmd
+      - name: Build the wheel on Windows
+        if: ${{ matrix.os == 'windows-latest' }}
+        run: |
+          python --version
+          cd ${{ github.workspace }}/${{ matrix.build-dir }}
+          pip3 install wheel && python setup.py bdist_wheel
+        shell: cmd
 
-    - name: Build the wheel on Ubuntu
-      if: ${{ matrix.os == 'ubuntu-18.04' || matrix.os == 'ubuntu-20.04' }}
-      run: |
-        python --version
-        cd ${{ github.workspace }}/${{ matrix.build-dir }}
-        pip3 install wheel && python setup.py bdist_wheel
+      - name: Build the wheel on Ubuntu
+        if: ${{ matrix.os == 'ubuntu-18.04' || matrix.os == 'ubuntu-20.04' }}
+        run: |
+          python --version
+          cd ${{ github.workspace }}/${{ matrix.build-dir }}
+          pip3 install wheel && python setup.py bdist_wheel
 
-    - name: Install the package on Windows
-      if: ${{ matrix.os == 'windows-latest' }}
-      run: |
-        cd ${{ github.workspace }}/${{ matrix.build-dir }}/dist
-        FOR %%i in (*.whl) DO python -m pip install %%i
-      shell: cmd
+      - name: Install the package on Windows
+        if: ${{ matrix.os == 'windows-latest' }}
+        run: |
+          cd ${{ github.workspace }}/${{ matrix.build-dir }}/dist
+          FOR %%i in (*.whl) DO python -m pip install %%i
+        shell: cmd
 
-    - name: Install the package on Ubuntu
-      if: ${{ matrix.os == 'ubuntu-18.04' || matrix.os == 'ubuntu-20.04' }}
-      run: |
-        cd ${{ github.workspace }}/${{ matrix.build-dir }}/dist
-        python -m pip install *.whl
+      - name: Install the package on Ubuntu
+        if: ${{ matrix.os == 'ubuntu-18.04' || matrix.os == 'ubuntu-20.04' }}
+        run: |
+          cd ${{ github.workspace }}/${{ matrix.build-dir }}/dist
+          python -m pip install *.whl
