@@ -11,7 +11,7 @@ from .postprocessing import Postprocessor
 
 
 class PalmProcessor:
-    def __init__(self, threshold):
+    def __init__(self, threshold, preview_shape):
         self.threshold = threshold
         self.input_height, self.input_width = (128, 128)
         self.output_names = ["classificators", "regressors"]
@@ -19,6 +19,7 @@ class PalmProcessor:
             os.path.join(os.path.dirname(__file__), "anchors.csv"),
         )
         self.class_names = {0: "background", 1: "palm"}
+        self.video_width, self.video_height = preview_shape
 
     def preprocess(self, data):
         preprocessed_data = []
@@ -56,7 +57,7 @@ class PalmProcessor:
         postprocessed_result = []
 
         for result, input_info in zip(predictions[0], predictions[1]):
-            scale, pads = input_info.scales[0], input_info.pads
+            (scale_x, scale_y), pads = input_info.scales, input_info.pads
             original_w, original_h = (
                 input_info.original_width,
                 input_info.original_height,
@@ -76,10 +77,18 @@ class PalmProcessor:
             for box, kps in zip(boxes, keypoints):
                 if box[4] > self.threshold:
                     palm_box = BBox(
-                        x1=int(np.clip((box[0] * w - pads[1]) / scale, 0, original_w)),
-                        y1=int(np.clip((box[1] * h - pads[0]) / scale, 0, original_h)),
-                        x2=int(np.clip((box[2] * w - pads[1]) / scale, 0, original_w)),
-                        y2=int(np.clip((box[3] * h - pads[0]) / scale, 0, original_h)),
+                        x1=int(
+                            np.clip((box[0] * w - pads[1]) / scale_x, 0, original_w),
+                        ),
+                        y1=int(
+                            np.clip((box[1] * h - pads[0]) / scale_y, 0, original_h),
+                        ),
+                        x2=int(
+                            np.clip((box[2] * w - pads[1]) / scale_x, 0, original_w),
+                        ),
+                        y2=int(
+                            np.clip((box[3] * h - pads[0]) / scale_y, 0, original_h),
+                        ),
                         score=float(box[4]),
                         class_name=self.class_names[1],
                     )
@@ -88,8 +97,8 @@ class PalmProcessor:
                             bbox=palm_box,
                             keypoints=[
                                 Point(
-                                    x=int((keypoint[0] * w - pads[1]) / scale),
-                                    y=int((keypoint[1] * h - pads[0]) / scale),
+                                    x=int((keypoint[0] * w - pads[1]) / scale_x),
+                                    y=int((keypoint[1] * h - pads[0]) / scale_y),
                                 )
                                 for keypoint in kps
                             ],
@@ -102,14 +111,31 @@ class PalmProcessor:
     def get_input_shapes(self):
         return self.input_width, self.input_height
 
-    @staticmethod
-    def forward(in_queue, out_queue, data):
+    def forward(self, in_queue, out_queue, data):
         results = []
-        for sample in data[0]:
-            nn_data = dai.NNData()
-            nn_data.setLayer("data", sample)
-            in_queue.send(nn_data)
+        if data is not None:
+            for sample in data[0]:
+                nn_data = dai.NNData()
+                nn_data.setLayer("data", sample)
+                in_queue.send(nn_data)
+                assert wait_for_results(out_queue)
+                results.append(out_queue.get())
+            data[0] = results
+        else:
             assert wait_for_results(out_queue)
             results.append(out_queue.get())
-        data[0] = results
+            data = [
+                results,
+                [
+                    DataInfo(
+                        scales=(
+                            self.input_width / self.video_width,
+                            self.input_height / self.video_height,
+                        ),
+                        pads=(0, 0),
+                        original_width=self.video_width,
+                        original_height=self.video_height,
+                    ),
+                ],
+            ]
         return data

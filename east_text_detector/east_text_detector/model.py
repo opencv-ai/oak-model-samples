@@ -33,8 +33,8 @@ class InferenceModel(OAKSingleStageModel):
         for img in data:
             img = np.array(img)
             height, width, _ = img.shape
-            scale_x = width / float(self.input_width)
-            scale_y = height / float(self.input_height)
+            scale_x = self.input_width / width
+            scale_y = self.input_height / height
             scaled_img = cv2.resize(img, (self.input_height, self.input_width))
             scaled_img = scaled_img.astype(np.float32)
             scaled_img -= self.mean
@@ -42,7 +42,7 @@ class InferenceModel(OAKSingleStageModel):
             scaled_img = scaled_img[np.newaxis]
             data_infos.append(
                 DataInfo(
-                    scales=(scale_y, scale_x),
+                    scales=(scale_x, scale_y),
                     pads=(0, 0),
                     original_width=width,
                     original_height=height,
@@ -64,9 +64,9 @@ class InferenceModel(OAKSingleStageModel):
             geometry2 = np.array(
                 result.getLayerFp16(result.getAllLayerNames()[2]),
             ).reshape((1, 1, 80, 80))
-            scale_h, scale_w = input_info.scales
+            scale_x, scale_y = input_info.scales
             (boxes, confidences) = decode_predictions(
-                scores, geometry1, geometry2, self.threshold, scale_w, scale_h,
+                scores, geometry1, geometry2, self.threshold, scale_x, scale_y,
             )
             boxes = non_max_suppression(boxes, probs=confidences)
 
@@ -74,8 +74,8 @@ class InferenceModel(OAKSingleStageModel):
             for box in boxes:
                 if len(box) == 0:
                     continue
-                original_w = scale_w * self.input_width
-                original_h = scale_h * self.input_height
+                original_w = self.input_width / scale_x
+                original_h = self.input_height / scale_y
                 points = rotated_rectangle(box)
                 points = [
                     Point(x=np.clip(x, 0, original_w), y=np.clip(y, 0, original_h))

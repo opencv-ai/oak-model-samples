@@ -12,7 +12,7 @@ Make sure you have installed:
 
    2.1 `pip3 install wheel && python3 setup.py bdist_wheel && rm -R build/ *.egg-info`
 
-   2.2 `pip3 install dist/*.whl -f https://artifacts.luxonis.com/artifactory/luxonis-python-snapshot-local/depthai/ && rm -R dist/`
+   2.2 `pip3 install dist/*.whl && rm -R dist/`
 
 <details>
   <summary><b>Windows Installation</b></summary>
@@ -23,7 +23,7 @@ Set up a package:
 
 1. `pip3 install wheel && python setup.py bdist_wheel`
 
-2. `for /r %G in ("dist\*.whl") do pip3 install "%~G" -f https://artifacts.luxonis.com/artifactory/luxonis-python-snapshot-local/depthai/`
+2. `for /r %G in ("dist\*.whl") do pip3 install "%~G"`
 
 3. `for /d %G in ("*.egg-info", "build\", "dist") do rd /s /q "%~G"`
 
@@ -32,8 +32,8 @@ Set up a package:
 ## Usage
 
 ```
-usage: main.py [-h] [-cam] [-vid VIDEO] [-vis] [-cs WIDTHxHEIGHT]
-               [--threshold THRESHOLD] [--save-results]
+usage: main.py [-h] [-cam] [-vid VIDEO] [-vis] [--threshold THRESHOLD]
+               [--save-results] [--preview_shape N N]
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -47,6 +47,10 @@ optional arguments:
   --threshold THRESHOLD, -tr THRESHOLD
                         Threshold for model predictions
   --save-results, -sr   Save by-frame results of the inference into json
+  --preview_shape W H, -ps W H
+                        Shapes for preview windows. Higher resolution leads to
+                        slower performance.
+
 
 ```
 

@@ -1,3 +1,4 @@
+__version__ = "0.2.2"
 from .base_model import (
     DataInfo,
     OAKSingleStageModel,

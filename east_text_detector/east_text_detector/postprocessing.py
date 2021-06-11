@@ -116,10 +116,13 @@ def decode_predictions(scores, geometry1, geometry2, threshold, scale_w, scale_h
     top_left_x = anchor_grid[1, valid_detections] - offsets_left
     h = offsets_top + offsets_bottom
     w = offsets_right + offsets_left
-    center_y = (top_left_y + h / 2) * scale_h
-    center_x = (top_left_x + w / 2) * scale_w
-    h, w = h * scale_h, w * scale_w
+    center_y = (top_left_y + h / 2) / scale_h
+    center_x = (top_left_x + w / 2) / scale_w
+    h, w = h / scale_h, w / scale_w
     angles = geometry2.squeeze()[valid_detections]
 
     rects = np.dstack((center_x, center_y, w, h, -angles)).squeeze()
+    if len(rects.shape) == 1:
+        rects = rects[np.newaxis]
+
     return (rects, scores)

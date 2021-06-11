@@ -1,6 +1,8 @@
+from typing import Tuple
+
 import cv2
 import numpy as np
-from modelplace_api import FacialLandmarks, Point
+from modelplace_api import Landmarks, Point
 
 from oak_inference_utils import OAKTwoStageModel
 
@@ -11,6 +13,7 @@ class InferenceModel(OAKTwoStageModel):
     def __init__(
         self,
         model_path: str,
+        preview_shape: Tuple[int, int] = (640, 480),
         model_name: str = "",
         model_description: str = "",
         threshold: float = 0.1,
@@ -21,7 +24,8 @@ class InferenceModel(OAKTwoStageModel):
         super().__init__(
             model_path=model_path,
             input_name="data",
-            first_stage=FaceProcessor(threshold),
+            preview_shape=preview_shape,
+            first_stage=FaceProcessor(threshold, preview_shape),
             model_name=model_name,
             model_description=model_description,
             **kwargs,
@@ -112,7 +116,7 @@ class InferenceModel(OAKTwoStageModel):
                     (face_bbox.y2 - face_bbox.y1),
                 )
                 image_predictions.append(
-                    FacialLandmarks(
+                    Landmarks(
                         bbox=face_bbox,
                         keypoints=[
                             Point(

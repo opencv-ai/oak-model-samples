@@ -1,5 +1,5 @@
 import cv2
-from modelplace_api import BBox, FacialLandmarks, Point
+from modelplace_api import BBox, Landmarks, Point
 
 from oak_inference_utils import DataInfo, OAKSingleStageModel
 
@@ -44,7 +44,7 @@ class InferenceModel(OAKSingleStageModel):
             preprocessed_data.append(resized_image)
             data_infos.append(
                 DataInfo(
-                    scales=(scale_y, scale_x),
+                    scales=(scale_x, scale_y),
                     pads=(0, 0),
                     original_width=width,
                     original_height=height,
@@ -55,7 +55,7 @@ class InferenceModel(OAKSingleStageModel):
     def postprocess(self, predictions):
         postprocessed_result = []
         for result, input_info in zip(predictions[0], predictions[1]):
-            scale_y, scale_x = input_info.scales
+            scale_x, scale_y = input_info.scales
             original_h, original_w = (
                 input_info.original_height,
                 input_info.original_width,
@@ -80,7 +80,7 @@ class InferenceModel(OAKSingleStageModel):
             for obj in objs:
                 box, confidence, landmark = obj
                 image_predictions.append(
-                    FacialLandmarks(
+                    Landmarks(
                         bbox=BBox(
                             x1=int(np.clip(box[0] / scale_x, 0, original_w)),
                             y1=int(np.clip(box[1] / scale_y, 0, original_h)),

@@ -68,7 +68,7 @@ class InferenceModel(OAKSingleStageModel):
         postprocessed_result = []
 
         for result, input_info in zip(predictions[0], predictions[1]):
-            scale, pads = input_info.scales[0], input_info.pads
+            (scale_x, scale_y), pads = input_info.scales, input_info.pads
             original_w, original_h = (
                 input_info.original_width,
                 input_info.original_height,
@@ -88,10 +88,18 @@ class InferenceModel(OAKSingleStageModel):
             for box, kps in zip(boxes, keypoints):
                 if box[4] > self.threshold:
                     palm_box = BBox(
-                        x1=int(np.clip((box[0] * w - pads[1]) / scale, 0, original_w)),
-                        y1=int(np.clip((box[1] * h - pads[0]) / scale, 0, original_h)),
-                        x2=int(np.clip((box[2] * w - pads[1]) / scale, 0, original_w)),
-                        y2=int(np.clip((box[3] * h - pads[0]) / scale, 0, original_h)),
+                        x1=int(
+                            np.clip((box[0] * w - pads[1]) / scale_x, 0, original_w),
+                        ),
+                        y1=int(
+                            np.clip((box[1] * h - pads[0]) / scale_y, 0, original_h),
+                        ),
+                        x2=int(
+                            np.clip((box[2] * w - pads[1]) / scale_x, 0, original_w),
+                        ),
+                        y2=int(
+                            np.clip((box[3] * h - pads[0]) / scale_y, 0, original_h),
+                        ),
                         score=float(box[4]),
                         class_name=self.class_names[1],
                     )
@@ -100,8 +108,8 @@ class InferenceModel(OAKSingleStageModel):
                             bbox=palm_box,
                             keypoints=[
                                 Point(
-                                    x=int((keypoint[0] * w - pads[1]) / scale),
-                                    y=int((keypoint[1] * h - pads[0]) / scale),
+                                    x=int((keypoint[0] * w - pads[1]) / scale_x),
+                                    y=int((keypoint[1] * h - pads[0]) / scale_y),
                                 )
                                 for keypoint in kps
                             ],

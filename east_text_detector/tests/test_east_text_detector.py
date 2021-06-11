@@ -1,6 +1,7 @@
 import json
 import os
 
+import cv2
 import pydantic
 from modelplace_api.utils import is_equal
 from PIL import Image
@@ -21,7 +22,7 @@ with open(test_result_path, "r") as j_file:
 
 @retry(RuntimeError, tries=3, delay=1)
 @reset_ports()
-def test_process_sample_openvino_east_text_detector():
+def test_process_sample_east_text_detector():
     model = InferenceModel(model_path=model_path)
     model.model_load()
     ret = model.process_sample(test_image)

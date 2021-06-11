@@ -1,4 +1,4 @@
-import os
+from typing import Tuple
 
 from modelplace_api import Joint, Link, Pose
 
@@ -59,6 +59,7 @@ class InferenceModel(OAKTwoStageModel):
     def __init__(
         self,
         model_path: str,
+        preview_shape: Tuple[int, int] = (640, 480),
         model_name: str = "",
         model_description: str = "",
         threshold: float = 0.1,
@@ -68,7 +69,8 @@ class InferenceModel(OAKTwoStageModel):
         super().__init__(
             model_path=model_path,
             input_name="data",
-            first_stage=PalmProcessor(threshold),
+            preview_shape=preview_shape,
+            first_stage=PalmProcessor(threshold, preview_shape),
             model_name=model_name,
             model_description=model_description,
             **kwargs,

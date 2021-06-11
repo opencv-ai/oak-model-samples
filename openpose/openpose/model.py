@@ -124,7 +124,7 @@ class InferenceModel(OAKSingleStageModel):
     def postprocess(self, results):
         postprocessed_detections = []
         for result, input_info in zip(results[0], results[1]):
-            scale, pads = input_info.scales[0], input_info.pads
+            (scale_x, scale_y), pads = input_info.scales, input_info.pads
             stage2_heatmaps = np.array(
                 result.getLayerFp16(result.getAllLayerNames()[-1]),
             ).reshape((1, 19, 32, 57))
@@ -163,12 +163,12 @@ class InferenceModel(OAKSingleStageModel):
                 all_keypoints[kpt_id, 0] = (
                     all_keypoints[kpt_id, 0] * self.stride / self.upsample_ratio
                     - pads[1]
-                ) / scale
+                ) / scale_x
 
                 all_keypoints[kpt_id, 1] = (
                     all_keypoints[kpt_id, 1] * self.stride / self.upsample_ratio
                     - pads[0]
-                ) / scale
+                ) / scale_y
 
             image_postproc_detections = []
             for n in range(len(pose_entries)):

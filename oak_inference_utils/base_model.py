@@ -49,6 +49,7 @@ class OAKSingleStageModel(BaseModel, ABC):
         model_path: str,
         input_name: str,
         input_shapes: Tuple[int, int],
+        preview_shape: Tuple[int, int] = (640, 480),
         model_name: str = "",
         model_description: str = "",
         **kwargs,
@@ -56,6 +57,11 @@ class OAKSingleStageModel(BaseModel, ABC):
         super().__init__(model_path, model_name, model_description, **kwargs)
         self.input_name = input_name
         self.input_width, self.input_height = input_shapes
+        self.video_width, self.video_height = preview_shape
+        if self.video_width < self.input_width:
+            self.video_width = self.input_width
+        if self.video_height < self.input_height:
+            self.video_height = self.input_height
 
     def process_sample(self, image):
         data = self.preprocess([image]) if self.cam_queue is None else None
@@ -77,15 +83,29 @@ class OAKSingleStageModel(BaseModel, ABC):
         data_in.out.link(self.model_blob.input)
         self.model_blob.out.link(data_out.input)
 
-    def model_load(self, device=Device.cpu):
+    def model_load(
+        self,
+        openvino_version=dai.OpenVINO.VERSION_2020_1,
+        device=Device.cpu,
+        use_camera=False,
+    ):
         model_blob = os.path.join(self.model_path, "model.blob")
         self.create_pipeline(model_blob)
+        self.pipeline.setOpenVINOVersion(openvino_version)
 
-        self.oak_device = dai.Device(self.pipeline)
-        self.oak_device.startPipeline()
-        self.data_in = self.oak_device.getInputQueue("data_in")
+        self.oak_device = dai.Device(openvino_version)
+
+        if use_camera:
+            self.add_cam_to_pipeline()
+
+        self.oak_device.startPipeline(self.pipeline)
+        self.data_in = None if use_camera else self.oak_device.getInputQueue("data_in")
         self.data_out = self.oak_device.getOutputQueue("data_out")
-        self.cam_queue = None
+        self.cam_queue = (
+            self.oak_device.getOutputQueue("cam_out", maxSize=1, blocking=False)
+            if use_camera
+            else None
+        )
 
     def forward(self, data):
         results = []
@@ -104,10 +124,13 @@ class OAKSingleStageModel(BaseModel, ABC):
                 results,
                 [
                     DataInfo(
-                        scales=(1.0, 1.0),
+                        scales=(
+                            self.input_width / self.video_width,
+                            self.input_height / self.video_height,
+                        ),
                         pads=(0, 0),
-                        original_width=self.input_width,
-                        original_height=self.input_height,
+                        original_width=self.video_width,
+                        original_height=self.video_height,
                     ),
                 ],
             ]
@@ -115,33 +138,26 @@ class OAKSingleStageModel(BaseModel, ABC):
         return data
 
     def add_cam_to_pipeline(self):
+        manip = self.pipeline.createImageManip()
+        manip.initialConfig.setResize(self.input_width, self.input_height)
         cam = self.pipeline.createColorCamera()
-        cam.setPreviewSize(self.input_width, self.input_height)
+        cam.setPreviewSize(self.video_width, self.video_height)
         cam.setResolution(dai.ColorCameraProperties.SensorResolution.THE_1080_P)
         cam.setInterleaved(False)
         cam.setBoardSocket(dai.CameraBoardSocket.RGB)
-        cam.preview.link(self.model_blob.input)
+        cam.preview.link(manip.inputImage)
         cam_out = self.pipeline.createXLinkOut()
         cam_out.setStreamName("cam_out")
         cam.preview.link(cam_out.input)
-
-        del self.oak_device
-        del self.data_in
-
-        self.oak_device = dai.Device(self.pipeline)
-        self.oak_device.startPipeline()
-
-        self.cam_queue = self.oak_device.getOutputQueue(
-            "cam_out", maxSize=1, blocking=False,
-        )
-
-        self.data_out = self.oak_device.getOutputQueue("data_out")
+        manip.out.link(self.model_blob.input)
 
     def get_frame_from_camera(self):
         if self.cam_queue is not None:
-            return self.cam_queue.get().getData()
+            return self.cam_queue.get().getCvFrame()
         else:
-            raise AttributeError("Initialize camera with `add_cam_to_pipeline` method")
+            raise AttributeError(
+                "Initialize camera with passing `use_camera` argument to `model_load` method",
+            )
 
     def get_input_shapes(self):
         return self.input_width, self.input_height
@@ -153,6 +169,7 @@ class OAKTwoStageModel(BaseModel, ABC):
         model_path: str,
         input_name: str,
         first_stage: Any,
+        preview_shape: Tuple[int, int] = (640, 480),
         model_name: str = "",
         model_description: str = "",
         **kwargs,
@@ -160,6 +177,11 @@ class OAKTwoStageModel(BaseModel, ABC):
         super().__init__(model_path, model_name, model_description, **kwargs)
         self.input_name = input_name
         self.first_stage = first_stage
+        self.video_width, self.video_height = preview_shape
+        if self.video_width < self.first_stage.input_width:
+            self.video_width = self.first_stage.input_width
+        if self.video_height < self.first_stage.input_height:
+            self.video_height = self.first_stage.input_height
 
     def process_sample(self, image):
         data = self.preprocess([image])
@@ -175,8 +197,8 @@ class OAKTwoStageModel(BaseModel, ABC):
         first_stage_in = self.pipeline.createXLinkIn()
         first_stage_in.setStreamName("first_stage_in")
 
-        first_stage_nn = self.pipeline.createNeuralNetwork()
-        first_stage_nn.setBlobPath(model_blob["first_stage_nn"])
+        self.first_stage_nn = self.pipeline.createNeuralNetwork()
+        self.first_stage_nn.setBlobPath(model_blob["first_stage_nn"])
 
         first_stage_out = self.pipeline.createXLinkOut()
         first_stage_out.setStreamName("first_stage_out")
@@ -190,27 +212,43 @@ class OAKTwoStageModel(BaseModel, ABC):
         second_stage_out = self.pipeline.createXLinkOut()
         second_stage_out.setStreamName("second_stage_out")
 
-        first_stage_in.out.link(first_stage_nn.input)
-        first_stage_nn.out.link(first_stage_out.input)
+        first_stage_in.out.link(self.first_stage_nn.input)
+        self.first_stage_nn.out.link(first_stage_out.input)
         second_stage_in.out.link(second_stage_nn.input)
         second_stage_nn.out.link(second_stage_out.input)
 
-    def model_load(self, device=Device.cpu):
+    def model_load(
+        self,
+        openvino_version=dai.OpenVINO.VERSION_2020_1,
+        device=Device.cpu,
+        use_camera=False,
+    ):
         model_blob = {
             "first_stage_nn": os.path.join(self.model_path, "stage_1.blob"),
             "second_stage_nn": os.path.join(self.model_path, "stage_2.blob"),
         }
 
         self.create_pipeline(model_blob)
+        self.pipeline.setOpenVINOVersion(openvino_version)
 
-        self.oak_device = dai.Device(self.pipeline)
-        self.oak_device.startPipeline()
+        self.oak_device = dai.Device(openvino_version)
 
-        self.first_stage_in = self.oak_device.getInputQueue("first_stage_in")
+        if use_camera:
+            self.add_cam_to_pipeline()
+
+        self.oak_device.startPipeline(self.pipeline)
+
+        self.first_stage_in = (
+            None if use_camera else self.oak_device.getInputQueue("first_stage_in")
+        )
         self.first_stage_out = self.oak_device.getOutputQueue("first_stage_out")
         self.second_stage_in = self.oak_device.getInputQueue("second_stage_in")
         self.second_stage_out = self.oak_device.getOutputQueue("second_stage_out")
-        self.cam_queue = None
+        self.cam_queue = (
+            self.oak_device.getOutputQueue("cam_out", maxSize=1, blocking=False)
+            if use_camera
+            else None
+        )
 
     def forward(self, data):
         results = []
@@ -227,36 +265,31 @@ class OAKTwoStageModel(BaseModel, ABC):
         return data
 
     def add_cam_to_pipeline(self):
+        manip = self.pipeline.createImageManip()
+        manip.initialConfig.setResize(*self.get_input_shapes())
         cam = self.pipeline.createColorCamera()
-        cam.setPreviewSize(*self.get_input_shapes())
+        cam.setPreviewSize(self.video_width, self.video_height)
         cam.setResolution(dai.ColorCameraProperties.SensorResolution.THE_1080_P)
         cam.setInterleaved(False)
         cam.setBoardSocket(dai.CameraBoardSocket.RGB)
+        cam.preview.link(manip.inputImage)
         cam_out = self.pipeline.createXLinkOut()
         cam_out.setStreamName("cam_out")
         cam.preview.link(cam_out.input)
-
-        del self.oak_device
-
-        self.oak_device = dai.Device(self.pipeline)
-        self.oak_device.startPipeline()
-
-        self.cam_queue = self.oak_device.getOutputQueue(
-            "cam_out", maxSize=1, blocking=False,
-        )
-        self.first_stage_in = self.oak_device.getInputQueue("first_stage_in")
-        self.first_stage_out = self.oak_device.getOutputQueue("first_stage_out")
-        self.second_stage_in = self.oak_device.getInputQueue("second_stage_in")
-        self.second_stage_out = self.oak_device.getOutputQueue("second_stage_out")
+        manip.out.link(self.first_stage_nn.input)
 
     def get_frame_from_camera(self):
         if self.cam_queue is not None:
-            return self.cam_queue.get().getData()
+            return self.cam_queue.get().getCvFrame()
         else:
-            raise AttributeError("Initialize camera with `add_cam_to_pipeline` method")
+            raise AttributeError(
+                "Initialize camera with passing `use_camera` argument to `model_load` method",
+            )
 
     def get_first_stage_result(self, data):
-        preprocessed_data = self.first_stage.preprocess(data)
+        preprocessed_data = None
+        if self.first_stage_in is not None:
+            preprocessed_data = self.first_stage.preprocess(data)
         first_stage_output = self.first_stage.forward(
             self.first_stage_in, self.first_stage_out, preprocessed_data,
         )
