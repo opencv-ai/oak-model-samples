@@ -6,9 +6,12 @@ test_status=0
 
 for model_folder in "${models[@]}"; do
     if [[ -d "$model_folder" ]] &&  [[ $(basename ${model_folder}) != @(ci|docs|oak_inference_utils|wheel_packages) ]]; then
-      python3 -m pip install pip --upgrade
-      python3.7 -m pip install --no-cache-dir --no-cache -U  wheel_packages/${model_folder::-1}*.whl -f https://artifacts.luxonis.com/artifactory/luxonis-python-snapshot-local/depthai/
-      cp -r oak_inference_utils ${model_folder}
+      python3.7 -m pip install pip --upgrade
+      python3.7 -m pip install --no-cache-dir --no-cache -U  wheel_packages/${model_folder::-1}*.whl
+      if  [[ $LATEST_DEPTHAI == 'true' ]];
+      then
+        python3.7 -m pip install -U depthai
+      fi
       cd ${model_folder}
       for ((iteration_amount = 1; iteration_amount <= ${retries}; iteration_amount++)); do
           python3.7 -m pytest -s -vv
@@ -25,4 +28,5 @@ for model_folder in "${models[@]}"; do
 done
 
 cd ${CI_PROJECT_DIR}
+python3.7 -m pip cache purge
 exit $test_status

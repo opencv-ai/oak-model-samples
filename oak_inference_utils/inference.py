@@ -2,6 +2,7 @@ import json
 import os
 
 import cv2
+import depthai as dai
 import numpy as np
 import pydantic
 from PIL import Image
@@ -38,25 +39,28 @@ def process_video(model, video_file, visualization_func):
 
 def process_cam(model, visualization_func):
     inference_results = []
-    model.add_cam_to_pipeline()
     proceed = True
     while proceed:
-        input_width, input_height = model.get_input_shapes()
-        image = np.ascontiguousarray(
-            model.get_frame_from_camera()
-            .reshape((3, input_height, input_width))
-            .transpose(1, 2, 0),
-        )
+        image = model.get_frame_from_camera()
         ret, proceed = process_frame(image, model, visualization_func)
         inference_results.append(ret)
     return inference_results
 
 
-def inference(model_cls, root_model_path, visualization_func):
+def inference(
+    model_cls,
+    root_model_path,
+    visualization_func,
+    openvino_version=dai.OpenVINO.VERSION_2020_1,
+):
     args = parse_args()
     model_path = os.path.join(root_model_path, "checkpoint")
-    model = model_cls(model_path=model_path, threshold=args.threshold)
-    model.model_load()
+    model = model_cls(
+        model_path=model_path,
+        threshold=args.threshold,
+        preview_shape=args.preview_shape,
+    )
+    model.model_load(openvino_version=openvino_version, use_camera=args.camera)
     if args.video:
         if not args.visualization:
             visualization_func = None

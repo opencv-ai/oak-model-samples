@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
-import os
-from shutil import copytree
+import os.path as osp
 
 from setuptools import setup
 
@@ -10,10 +9,16 @@ package_data = {
     "": ["*"],
 }
 
+package_dir = {
+    "oak_inference_utils": osp.join(
+        osp.dirname(osp.dirname(osp.abspath(__file__))), "oak_inference_utils",
+    ),
+}
 extra_requirements = "vis-windows"
+
 setup_kwargs = {
     "name": "yolov4_tiny",
-    "version": "0.2.0",
+    "version": "0.2.1",
     "description": "YOLO v4 Tiny is a real-time object detection ",
     "long_description": None,
     "author": "",
@@ -23,17 +28,12 @@ setup_kwargs = {
     "url": None,
     "packages": packages,
     "package_data": package_data,
+    "package_dir": package_dir,
     "python_requires": ">=3.7,<4.0",
     "install_requires": [
-        "depthai==0.0.2.1+87247bfb645027a30c68191d88fe1b69b70e39ac",
-        f"modelplace-api[{extra_requirements}]@https://github.com/opencv-ai/modelplace-api/archive/v0.4.8.zip",
+        "depthai~=2.4.0",
+        f"modelplace-api[{extra_requirements}]@https://github.com/opencv-ai/modelplace-api/archive/v0.4.10.zip",
     ],
 }
-
-file_dir = os.path.dirname(os.path.abspath(__file__))
-root_dir = os.path.dirname(file_dir)
-dist_dir = os.path.join(file_dir, "oak_inference_utils")
-if not os.path.exists(dist_dir):
-    copytree(os.path.join(root_dir, "oak_inference_utils"), dist_dir)
 
 setup(**setup_kwargs)

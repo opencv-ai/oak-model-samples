@@ -168,6 +168,9 @@ class InferenceModel(OAKSingleStageModel):
             79: "hair drier",
             80: "toothbrush",
         }
+        params_file = os.path.join(os.path.dirname(__file__), "yolov4_params.json")
+        with open(params_file) as json_file:
+            self.yolo_params = json.load(json_file)
 
     @staticmethod
     def parse_yolo_region(
@@ -324,9 +327,3 @@ class InferenceModel(OAKSingleStageModel):
                     )
             postprocessed_result.append(image_predictions)
         return postprocessed_result
-
-    def model_load(self):
-        super().model_load()
-        params_file = os.path.join(os.path.dirname(__file__), "yolov4_params.json")
-        with open(params_file) as json_file:
-            self.yolo_params = json.load(json_file)

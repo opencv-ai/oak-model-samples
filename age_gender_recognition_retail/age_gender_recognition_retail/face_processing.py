@@ -7,9 +7,10 @@ from oak_inference_utils import DataInfo, pad_img, wait_for_results
 
 
 class FaceProcessor:
-    def __init__(self, threshold):
+    def __init__(self, threshold, preview_shape):
         self.threshold = threshold
         self.input_height, self.input_width = (300, 300)
+        self.video_width, self.video_height = preview_shape
 
     def preprocess(self, data):
         preprocessed_data = []
@@ -47,7 +48,7 @@ class FaceProcessor:
         postprocessed_result = []
 
         for result, input_info in zip(predictions[0], predictions[1]):
-            scale, pads = input_info.scales[0], input_info.pads
+            (scale_x, scale_y), pads = input_info.scales, input_info.pads
             original_w, original_h = (
                 input_info.original_width,
                 input_info.original_height,
@@ -62,16 +63,24 @@ class FaceProcessor:
                     image_predictions.append(
                         BBox(
                             x1=int(
-                                np.clip((box[3] * w - pads[1]) / scale, 0, original_w),
+                                np.clip(
+                                    (box[3] * w - pads[1]) / scale_x, 0, original_w,
+                                ),
                             ),
                             y1=int(
-                                np.clip((box[4] * h - pads[0]) / scale, 0, original_h),
+                                np.clip(
+                                    (box[4] * h - pads[0]) / scale_y, 0, original_h,
+                                ),
                             ),
                             x2=int(
-                                np.clip((box[5] * w - pads[1]) / scale, 0, original_w),
+                                np.clip(
+                                    (box[5] * w - pads[1]) / scale_x, 0, original_w,
+                                ),
                             ),
                             y2=int(
-                                np.clip((box[6] * h - pads[0]) / scale, 0, original_h),
+                                np.clip(
+                                    (box[6] * h - pads[0]) / scale_y, 0, original_h,
+                                ),
                             ),
                             score=float(box[2]),
                             class_name="person",
@@ -84,14 +93,31 @@ class FaceProcessor:
     def get_input_shapes(self):
         return self.input_width, self.input_height
 
-    @staticmethod
-    def forward(in_queue, out_queue, data):
+    def forward(self, in_queue, out_queue, data):
         results = []
-        for sample in data[0]:
-            nn_data = dai.NNData()
-            nn_data.setLayer("data", sample)
-            in_queue.send(nn_data)
+        if data is not None:
+            for sample in data[0]:
+                nn_data = dai.NNData()
+                nn_data.setLayer("data", sample)
+                in_queue.send(nn_data)
+                assert wait_for_results(out_queue)
+                results.append(out_queue.get())
+            data[0] = results
+        else:
             assert wait_for_results(out_queue)
             results.append(out_queue.get())
-        data[0] = results
+            data = [
+                results,
+                [
+                    DataInfo(
+                        scales=(
+                            self.input_width / self.video_width,
+                            self.input_height / self.video_height,
+                        ),
+                        pads=(0, 0),
+                        original_width=self.video_width,
+                        original_height=self.video_height,
+                    ),
+                ],
+            ]
         return data

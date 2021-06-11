@@ -122,16 +122,16 @@ class InferenceModel(OAKSingleStageModel):
         return [preprocessed_data, data_infos]
 
     @staticmethod
-    def rescale_keypoints(keypoints_list, pad, scale):
+    def rescale_keypoints(keypoints_list, pad, scales):
         for keypoint in keypoints_list:
-            keypoint[0] = int((keypoint[0] - pad[1]) / scale)
-            keypoint[1] = int((keypoint[1] - pad[0]) / scale)
+            keypoint[0] = int((keypoint[0] - pad[1]) / scales[0])
+            keypoint[1] = int((keypoint[1] - pad[0]) / scales[1])
         return keypoints_list
 
     def postprocess(self, results):
         postprocessed_detections = []
         for stages_output, input_info in zip(results[0], results[1]):
-            scale, pads = input_info.scales[0], input_info.pads
+            scales, pads = input_info.scales, input_info.pads
             detected_keypoints = []
             keypoints_list = np.zeros((0, 3))
             keypoint_id = 0
@@ -157,7 +157,7 @@ class InferenceModel(OAKSingleStageModel):
                 valid_pairs, invalid_pairs, keypoints_list,
             )
             image_postproc_detections = []
-            keypoints_list = self.rescale_keypoints(keypoints_list, pads, scale)
+            keypoints_list = self.rescale_keypoints(keypoints_list, pads, scales)
             for n in range(len(personwise_keypoints)):
                 if len(personwise_keypoints[n]) == 0:
                     continue

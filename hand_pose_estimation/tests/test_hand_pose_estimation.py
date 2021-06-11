@@ -1,6 +1,7 @@
 import json
 import os
 
+import depthai as dai
 import modelplace_api
 import pydantic
 from modelplace_api.utils import is_equal
@@ -25,7 +26,7 @@ with open(test_result_path, "r") as j_file:
 def test_process_sample_hand_pose_estimation():
     print(modelplace_api.__version__)
     model = InferenceModel(model_path=model_path, threshold=0.3)
-    model.model_load()
+    model.model_load(dai.OpenVINO.VERSION_2021_2)
     ret = model.process_sample(test_image)
     ret = [pydantic.json.pydantic_encoder(item) for item in ret]
     del model

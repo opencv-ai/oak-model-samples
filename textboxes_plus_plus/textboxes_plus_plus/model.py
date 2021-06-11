@@ -28,6 +28,11 @@ class InferenceModel(OAKSingleStageModel):
             **kwargs,
         )
         self.threshold = threshold
+        with open(
+            os.path.join(os.path.dirname(__file__), "postprocessing_config.json"), "r",
+        ) as fp:
+            postprocess_config = json.load(fp)
+        self.postprocessor = PriorUtil(**postprocess_config)
 
     def preprocess(self, data):
         preprocessed_data = []
@@ -65,7 +70,7 @@ class InferenceModel(OAKSingleStageModel):
         postprocessed_result = []
 
         for result, input_info in zip(predictions[0], predictions[1]):
-            scale, pads = input_info.scales[0], input_info.pads
+            (scale_x, scale_y), pads = input_info.scales, input_info.pads
             original_w, original_h = (
                 input_info.original_width,
                 input_info.original_height,
@@ -93,10 +98,10 @@ class InferenceModel(OAKSingleStageModel):
                 -1, 4, 2,
             )
             quads[:, :, 0] = np.clip(
-                (quads[:, :, 0] * w - pads[1]) / scale, 0, original_w,
+                (quads[:, :, 0] * w - pads[1]) / scale_x, 0, original_w,
             )
             quads[:, :, 1] = np.clip(
-                (quads[:, :, 1] * h - pads[0]) / scale, 0, original_h,
+                (quads[:, :, 1] * h - pads[0]) / scale_y, 0, original_h,
             )
 
             image_predictions = []
@@ -106,11 +111,3 @@ class InferenceModel(OAKSingleStageModel):
             postprocessed_result.append(image_predictions)
 
         return postprocessed_result
-
-    def model_load(self):
-        super().model_load()
-        with open(
-            os.path.join(os.path.dirname(__file__), "postprocessing_config.json"), "r",
-        ) as fp:
-            postprocess_config = json.load(fp)
-        self.postprocessor = PriorUtil(**postprocess_config)

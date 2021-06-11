@@ -54,18 +54,9 @@ test_models_gen2_develop_commit:
     - schedules
 
 test_models_gen2_develop_latest:
+  extends: test_models_gen2_develop_commit
   variables:
-    PYTHONPATH: $CI_PROJECT_DIR
-  stage: test_packages
-  before_script:
-    - cd $CI_PROJECT_DIR
-    - python3.7 -m pip install -U --force-reinstall depthai@git+https://github.com/luxonis/depthai-python@gen2_develop
-  script:
-    - ci/test_package.sh
-  tags:
-    - oak
-  except:
-    - schedules
+    LATEST_DEPTHAI: "true"
   allow_failure: true
 
 test_models_gen2_develop_commit_schedule:
@@ -82,18 +73,9 @@ test_models_gen2_develop_commit_schedule:
     - schedules
 
 test_models_gen2_develop_latest_schedule:
+  extends: test_models_gen2_develop_commit_schedule
   variables:
-    PYTHONPATH: $CI_PROJECT_DIR
-  stage: test_packages
-  before_script:
-    - cd $CI_PROJECT_DIR
-    - python3.7 -m pip install -U --force-reinstall depthai@git+https://github.com/luxonis/depthai-python@gen2_develop
-  script:
-    - ci/test_package.sh
-  tags:
-    - oak
-  only:
-    - schedules
+    LATEST_DEPTHAI: "true"
   allow_failure: true
 
 mirror_main:

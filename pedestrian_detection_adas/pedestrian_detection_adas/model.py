@@ -60,7 +60,7 @@ class InferenceModel(OAKSingleStageModel):
         postprocessed_result = []
 
         for result, input_info in zip(predictions[0], predictions[1]):
-            scale, pads = input_info.scales[0], input_info.pads
+            (scale_x, scale_y), pads = input_info.scales, input_info.pads
             original_w, original_h = (
                 input_info.original_width,
                 input_info.original_height,
@@ -74,10 +74,18 @@ class InferenceModel(OAKSingleStageModel):
             for box in boxes:
                 image_predictions.append(
                     BBox(
-                        x1=int(np.clip((box[3] * w - pads[1]) / scale, 0, original_w)),
-                        y1=int(np.clip((box[4] * h - pads[0]) / scale, 0, original_h)),
-                        x2=int(np.clip((box[5] * w - pads[1]) / scale, 0, original_w)),
-                        y2=int(np.clip((box[6] * h - pads[0]) / scale, 0, original_h)),
+                        x1=int(
+                            np.clip((box[3] * w - pads[1]) / scale_x, 0, original_w),
+                        ),
+                        y1=int(
+                            np.clip((box[4] * h - pads[0]) / scale_y, 0, original_h),
+                        ),
+                        x2=int(
+                            np.clip((box[5] * w - pads[1]) / scale_x, 0, original_w),
+                        ),
+                        y2=int(
+                            np.clip((box[6] * h - pads[0]) / scale_y, 0, original_h),
+                        ),
                         score=float(box[2]),
                         class_name="person",
                     ),

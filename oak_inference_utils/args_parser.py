@@ -34,4 +34,13 @@ def parse_args():
         help="Save by-frame results of the inference into json",
         action="store_true",
     )
+    parser.add_argument(
+        "--preview_shape",
+        "-ps",
+        help="Shapes for preview windows. Higher resolution leads to slower performance.",
+        default=(640, 480),
+        type=int,
+        nargs=2,
+        metavar=("W", "H"),
+    )
     return parser.parse_args()
