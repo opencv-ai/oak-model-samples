@@ -1,10 +1,10 @@
 # oak-model-samples
 
-This repository contains OAK-ready models from [Modelplace.AI](https://modelplace.ai).
+This repository contains OpenCV AI Kit (OAK)-ready models from [Modelplace.AI](https://modelplace.ai), the AI model marketplace.
 
 ## Usage
 
-Please, use the links listed in the table below to find a model and follow the instructions provided there.
+Use the links in the table below to find the instructions for each model.
 
 ## List of Models
 
